@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineCasal - Login</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="background-wrapper">
+        </div>
+
+    <main class="login-container">
+        <div class="glass-panel">
+            <div class="profile-avatars">
+                <img src="assets/img/seu-avatar.png" alt="Seu Perfil" class="avatar placeholder">
+                <img src="assets/img/gabi-avatar.png" alt="Perfil da Gabriella" class="avatar placeholder">
+            </div>
+            
+            <h1>Nosso Cinema</h1>
+            <p>Acesse para ver nossa agenda.</p>
+
+            <form id="login-form">
+                <div class="input-group">
+                    <input type="email" id="email" placeholder="E-mail" required>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="password" placeholder="Senha" required>
+                </div>
+                <button type="submit" class="btn-glass">Entrar</button>
+            </form>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script src="js/supabase.js"></script>
+    <script src="js/auth.js"></script>
+</body>
+</html>

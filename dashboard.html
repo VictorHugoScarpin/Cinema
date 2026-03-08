@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CineCasal Premium</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#050505">
+    <link rel="apple-touch-icon" href="assets/img/icon.png">
+</head>
+<body>
+    <div id="dynamic-bg" class="dashboard-bg"></div>
+
+    <div class="glass-container">
+        <header class="main-header glass-panel">
+            <div class="pair-info">
+                <div class="avatars">
+                    <img id="my-header-avatar" class="av-sm" src="assets/img/sem-capa.png">
+                    <img id="partner-header-avatar" class="av-sm" src="assets/img/sem-capa.png">
+                </div>
+            </div>
+            <button id="logout-btn" class="btn-text">Sair</button>
+        </header>
+
+        <main class="content-area">
+            
+            <section id="agenda-section" class="view-section active">
+                
+                <div class="label-section">NOSSAS ESTATÍSTICAS</div>
+                <div class="stats-home-card glass-panel">
+                    <div class="stats-home-grid">
+                        <div class="sh-item">
+                            <b id="home-stat-juntos">0</b>
+                            <small>Juntos</small>
+                        </div>
+                        <div class="sh-item">
+                            <b id="home-stat-media">0.0</b>
+                            <small>Média</small>
+                        </div>
+                        <div class="sh-item">
+                            <b id="home-stat-genre">-</b>
+                            <small>Gênero</small>
+                        </div>
+                    </div>
+                    <div class="critical-box">
+                        <div class="crit-icon">👑</div>
+                        <div class="crit-info">
+                            <small>O Mais Crítico</small>
+                            <b id="crit-name">Ninguém</b>
+                            <span id="crit-media">Média: -</span>
+                        </div>
+                        <img id="crit-avatar" src="assets/img/sem-capa.png" class="crit-img">
+                    </div>
+                </div>
+
+                <div class="search-wrapper glass-panel">
+                    <input type="text" id="search-movie" placeholder="Pesquisar filme..." autocomplete="off">
+                    <div id="search-results" class="results-flyout hidden"></div>
+                </div>
+
+                <div class="label-section">PRÓXIMA SESSÃO</div>
+                <div class="hero-ticket glass-panel" id="ticket-container">
+                    <div class="poster-wrapper">
+                        <img src="assets/img/sem-capa.png" id="ticket-poster" class="ticket-img">
+                    </div>
+                    <div class="ticket-body">
+                        <h2 id="ticket-title">Escolha um filme</h2>
+                        <p id="ticket-date">A definir</p>
+                        
+                        <div id="ticket-btns" class="btn-group">
+                            <button id="btn-roleta" class="btn-sq">🎲</button>
+                            <button id="btn-agendar" class="btn-pill">Agendar</button>
+                            <button id="btn-check" class="btn-sq">✓</button>
+                        </div>
+
+                        <button id="btn-share-wa" class="btn-outline-sm hidden" style="margin-top: 12px; width: 100%; border-color: #25D366; color: #25D366; font-weight: 700;">📱 Convocar no WhatsApp</button>
+
+                        <div id="pending-rating-box" class="hidden">
+                            <p class="pending-alert">Aguardando avaliação</p>
+                            <button id="btn-open-rating" class="btn-solid highlight full-width">Avaliar Filme</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="watchlist-section" class="view-section hidden">
+                <div class="label-section">QUEREMOS VER</div>
+                <div class="movie-grid" id="watchlist-grid"></div>
+            </section>
+
+            <section id="network-section" class="view-section hidden">
+                <div class="profile-nav glass-panel">
+                    <button class="n-tab active" id="tab-me">Meu Perfil</button>
+                    <button class="n-tab" id="tab-partner">Parceiro</button>
+                </div>
+
+                <div class="profile-card glass-panel">
+                    <img id="profile-avatar" class="av-lg">
+                    <h2 id="profile-name">---</h2>
+                    <p id="profile-bio">---</p>
+                    <button id="btn-edit-trigger" class="btn-outline-sm hidden">Editar Perfil</button>
+                    
+                    <div class="stats-row">
+                        <div class="s-item"><b id="stat-vistos">0</b><small>Vistos</small></div>
+                        <div class="s-item"><b id="stat-media">0.0</b><small>Média</small></div>
+                        <div class="s-item"><b id="stat-genre">-</b><small>Gênero Fav.</small></div>
+                    </div>
+                </div>
+
+                <div class="sub-nav-profile">
+                    <button class="sub-btn active" data-target="box-cronologia">Cronologia</button>
+                    <button class="sub-btn" data-target="box-assistidos">Todos</button>
+                    <button class="sub-btn" data-target="box-comum">Em Comum</button>
+                </div>
+
+                <div id="box-cronologia" class="prof-content active">
+                    <div class="history-list" id="history-timeline"></div>
+                </div>
+                
+                <div id="box-assistidos" class="prof-content">
+                    <div class="movie-grid" id="all-watched-grid"></div>
+                </div>
+
+                <div id="box-comum" class="prof-content">
+                    <div class="shared-list" id="shared-movies-list"></div>
+                </div>
+            </section>
+        </main>
+
+        <nav class="tab-bar glass-panel">
+            <button class="t-item active" data-target="agenda-section">Home</button>
+            <button class="t-item" data-target="watchlist-section">Lista</button>
+            <button class="t-item" data-target="network-section">Rede</button>
+        </nav>
+    </div>
+
+    <div id="modal-action" class="overlay hidden">
+        <div class="centered-card glass-panel">
+            <h3 id="sheet-title">Título</h3>
+            <p id="sheet-desc" class="sub-text">Escolha uma ação</p>
+            <div class="modal-options">
+                <button id="opt-watchlist" class="btn-solid">Adicionar à Lista</button>
+                <button id="opt-history" class="btn-outline">Já assisti sozinho</button>
+                <button onclick="closeModals()" class="btn-text cancel">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-rating" class="overlay hidden">
+        <div class="centered-card glass-panel">
+            <h3>Sua Avaliação</h3>
+            <p id="rating-movie-title" class="sub-text">Filme</p>
+            <input type="number" id="input-rating" min="1" max="5" step="0.1" placeholder="Nota (ex: 4.5)" class="glass-input text-center">
+            <button id="btn-save-rating" class="btn-solid full-width">Validar Minha Nota</button>
+            <button onclick="closeModals()" class="btn-text cancel">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="modal-edit" class="overlay hidden">
+        <div class="centered-card glass-panel">
+            <h3>Configurar Perfil</h3>
+            <input type="text" id="edit-name" class="glass-input" placeholder="Seu Nome">
+            <input type="text" id="edit-avatar" class="glass-input" placeholder="URL da Foto (ou use o upload)">
+            <input type="file" id="edit-avatar-file" class="glass-input" accept="image/*" style="padding: 10px;">
+            <textarea id="edit-bio" class="glass-input" placeholder="Biografia..."></textarea>
+            <button id="btn-save-profile" class="btn-solid full-width">Salvar</button>
+            <button onclick="closeModals()" class="btn-text cancel">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="modal-schedule" class="overlay hidden">
+        <div class="centered-card glass-panel">
+            <h3>Agendar Filme</h3>
+            <select id="modal-movie-select" class="glass-input"></select>
+            <input type="date" id="modal-date" class="glass-input">
+            <button id="btn-confirm-schedule" class="btn-solid full-width">Confirmar Agenda</button>
+            <button onclick="closeModals()" class="btn-text cancel">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="modal-movie-details" class="overlay hidden">
+        <div class="details-card glass-panel">
+            <button class="close-details" onclick="closeModals()">✕</button>
+            
+            <div class="detail-header-img">
+                <img id="detail-poster" src="assets/img/sem-capa.png">
+                <div class="img-fade"></div>
+            </div>
+            
+            <div class="detail-info">
+                <h2 id="detail-title">Carregando...</h2>
+                
+                <div class="detail-meta">
+                    <span id="detail-year">-</span> •
+                    <span id="detail-runtime">-</span> •
+                    <span id="detail-genre">-</span>
+                </div>
+                
+                <div class="detail-crew">
+                    <p><strong>Direção:</strong> <span id="detail-director">-</span></p>
+                    <p><strong>Elenco:</strong> <span id="detail-cast">-</span></p>
+                </div>
+                
+                <div class="detail-synopsis">
+                    <p id="detail-overview">Buscando informações no banco de dados...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
