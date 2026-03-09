@@ -275,66 +275,95 @@ function setupSwipeGestures() {
     }, {passive: true});
 }
 
+// === GESTOS DE ABAS E MODAIS ===
 function setupGlobalModals() {
-    // Abrir (adicionar classes de animação)
+    // Abrir gaveta (e garantir que ela não venha "caída")
     window.openModal = (id) => {
         haptic();
         const m = document.getElementById(id);
+        const sheet = m.querySelector('.swipeable-sheet');
+        if (sheet) sheet.style.transform = ''; // Reseta a posição arrastada antes de abrir
         m.classList.remove('hidden');
-        setTimeout(() => m.querySelector('.glass-panel').classList.add('open'), 10);
+        setTimeout(() => { if (sheet) sheet.classList.add('open'); }, 10);
     };
 
-    // Fechar tudo
+    // Fechar todas as gavetas (e limpar o rastro do arraste)
     window.closeModals = () => {
         haptic();
         document.querySelectorAll('.swipeable-sheet').forEach(sheet => {
             sheet.classList.remove('open');
-            setTimeout(() => sheet.parentElement.classList.add('hidden'), 300); // Espera a animação descer
+            setTimeout(() => { 
+                sheet.parentElement.classList.add('hidden'); 
+                sheet.style.transform = ''; // Devolve a gaveta pro topo para o próximo uso
+            }, 300);
         });
     };
 
-    // Swipe para fechar gavetas (Mobile Drag)
-    document.querySelectorAll('.drag-handle').forEach(handle => {
-        let sy = 0;
-        handle.addEventListener('touchstart', e => sy = e.touches[0].clientY, {passive:true});
-        handle.addEventListener('touchmove', e => {
-            const pull = e.touches[0].clientY - sy;
-            if(pull > 0) handle.parentElement.style.transform = `translateY(${pull}px)`;
-        }, {passive:true});
-        handle.addEventListener('touchend', e => {
-            const pull = e.changedTouches[0].clientY - sy;
-            if(pull > 100) closeModals();
-            else handle.parentElement.style.transform = ''; // Volta pro lugar
+    // NOVIDADE: Fechar clicando fora da gaveta (no fundo escuro)
+    document.querySelectorAll('.overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+            // Verifica se o clique foi EXATAMENTE no fundo preto, e não dentro da gaveta
+            if (e.target === overlay) {
+                closeModals();
+            }
         });
     });
 
-    document.getElementById('logout-btn').onclick = async () => { haptic(); await supabaseClient.auth.signOut(); window.location.href = 'index.html'; };
+    // Swipe para fechar gavetas (Mobile Drag Corrigido)
+    document.querySelectorAll('.drag-handle').forEach(handle => {
+        let sy = 0;
+        const sheet = handle.parentElement; // Pega a gaveta inteira
+        
+        handle.addEventListener('touchstart', e => sy = e.touches[0].clientY, {passive:true});
+        handle.addEventListener('touchmove', e => {
+            const pull = e.touches[0].clientY - sy;
+            if(pull > 0) sheet.style.transform = `translateY(${pull}px)`;
+        }, {passive:true});
+        handle.addEventListener('touchend', e => {
+            const pull = e.changedTouches[0].clientY - sy;
+            if(pull > 100) {
+                closeModals(); // Puxou bastante para baixo, fecha!
+            } else {
+                sheet.style.transform = ''; // Desistiu de puxar, volta pro lugar
+            }
+        });
+    });
 
-    document.getElementById('btn-edit-trigger').onclick = () => {
-        const me = allProfiles.find(x => x.id === currentUser.id);
-        document.getElementById('edit-name').value = me?.name !== "Novo Usuário" ? me?.name : "";
-        document.getElementById('edit-bio').value = me?.bio || "";
-        openModal('modal-edit');
-    };
+    // Botões do Perfil
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) logoutBtn.onclick = async () => { haptic(); await supabaseClient.auth.signOut(); window.location.href = 'index.html'; };
 
-    document.getElementById('btn-save-profile').onclick = async () => {
-        setBtnLoading('btn-save-profile', true);
-        const name = document.getElementById('edit-name').value || "Sem Nome";
-        const bio = document.getElementById('edit-bio').value;
-        const fileInput = document.getElementById('edit-avatar-file');
-        let avatarUrl = allProfiles.find(x => x.id === currentUser.id)?.avatar_url;
+    const btnEdit = document.getElementById('btn-edit-trigger');
+    if (btnEdit) {
+        btnEdit.onclick = () => {
+            const me = allProfiles.find(x => x.id === currentUser.id);
+            document.getElementById('edit-name').value = me?.name !== "Novo Usuário" ? me?.name : "";
+            document.getElementById('edit-bio').value = me?.bio || "";
+            openModal('modal-edit');
+        };
+    }
 
-        if (fileInput.files.length > 0) {
-            const file = fileInput.files[0];
-            const fileName = `${currentUser.id}-${Math.random()}.${file.name.split('.').pop()}`;
-            const { error } = await supabaseClient.storage.from('avatars').upload(fileName, file);
-            if (!error) avatarUrl = supabaseClient.storage.from('avatars').getPublicUrl(fileName).data.publicUrl;
-        }
+    const btnSaveProfile = document.getElementById('btn-save-profile');
+    if (btnSaveProfile) {
+        btnSaveProfile.onclick = async () => {
+            setBtnLoading('btn-save-profile', true);
+            const name = document.getElementById('edit-name').value || "Sem Nome";
+            const bio = document.getElementById('edit-bio').value;
+            const fileInput = document.getElementById('edit-avatar-file');
+            let avatarUrl = allProfiles.find(x => x.id === currentUser.id)?.avatar_url;
 
-        await supabaseClient.from('profiles').update({ name, bio, avatar_url: avatarUrl }).eq('id', currentUser.id);
-        setBtnLoading('btn-save-profile', false);
-        closeModals(); loadData(); showToast("Perfil atualizado! ✨");
-    };
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const fileName = `${currentUser.id}-${Math.random()}.${file.name.split('.').pop()}`;
+                const { error } = await supabaseClient.storage.from('avatars').upload(fileName, file);
+                if (!error) avatarUrl = supabaseClient.storage.from('avatars').getPublicUrl(fileName).data.publicUrl;
+            }
+
+            await supabaseClient.from('profiles').update({ name, bio, avatar_url: avatarUrl }).eq('id', currentUser.id);
+            setBtnLoading('btn-save-profile', false);
+            closeModals(); loadData(); showToast("Perfil atualizado! ✨");
+        };
+    }
 }
 
 // === TICKET E AVALIAÇÃO (NOTA 10) ===
@@ -680,6 +709,7 @@ async function openMovieDetails(tmdbId) {
 
 }
 
+// === BUSCA FILME SURPRESA E BOTÃO ADICIONAR ===
 async function fetchSurpriseSuggestion() {
     try {
         const page = Math.floor(Math.random() * 10) + 1;
@@ -689,11 +719,43 @@ async function fetchSurpriseSuggestion() {
         const joia = data.results.find(m => !blockList.includes(m.id));
         if(joia) {
             window.surpriseMovieId = joia.id;
+            window.surpriseMovieData = joia; // Guarda o objeto do filme na memória
             document.getElementById('sug-title').innerText = joia.title;
             document.getElementById('sug-rating').innerText = joia.vote_average.toFixed(1);
             document.getElementById('sug-poster').src = `https://image.tmdb.org/t/p/w92${joia.poster_path}`;
-        } else { document.getElementById('suggestion-box').classList.add('hidden'); }
+        } else { 
+            document.getElementById('suggestion-box').classList.add('hidden'); 
+        }
     } catch(e) {}
+}
+
+// Ação do botão ➕ na Surpresa
+const btnAddSurprise = document.getElementById('btn-add-surprise');
+if (btnAddSurprise) {
+    btnAddSurprise.onclick = async (e) => {
+        e.stopPropagation(); // Mágica: Impede o clique de "vazar" pro card e abrir os detalhes
+        haptic();
+        
+        if (!window.surpriseMovieData) return;
+        
+        btnAddSurprise.innerText = "⏳";
+        btnAddSurprise.disabled = true;
+        
+        // Salva o filme no banco de dados
+        const m = await syncMovieWithDB(window.surpriseMovieData);
+        const { error } = await supabaseClient.from('watchlist').insert({ movie_id: m.id, added_by: currentUser.id });
+        
+        btnAddSurprise.innerText = "➕";
+        btnAddSurprise.disabled = false;
+
+        if (error) {
+            showToast("Filme já está na lista!");
+        } else {
+            showToast("Adicionado à Lista! 🍿");
+            loadData(); // Atualiza a aba Lista no fundo
+            fetchSurpriseSuggestion(); // Já sorteia uma NOVA surpresa instantaneamente!
+        }
+    };
 }
 
 // === TILT 3D, LONG PRESS, EMPTY STATES ===
