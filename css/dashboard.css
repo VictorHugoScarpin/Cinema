@@ -113,7 +113,16 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 
 .movie-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
 /* O TILT VAI CUIDAR DO HOVER, ENTAO RETIRAMOS O TRANSFORM AQUI */
-.movie-card { position: relative; border-radius: 14px; transform-style: preserve-3d; }
+/* O TILT VAI CUIDAR DO HOVER, ENTAO RETIRAMOS O TRANSFORM AQUI */
+.movie-card { 
+    position: relative; 
+    border-radius: 14px; 
+    transform-style: preserve-3d; 
+    /* BLOQUEIA O MENU NATIVO DE SALVAR FOTO NO IPHONE */
+    -webkit-touch-callout: none; 
+    -webkit-user-select: none; 
+    user-select: none; 
+}
 .movie-card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; border-radius: 14px; transform: translateZ(20px); }
 .added-by-badge { position: absolute; bottom: 10px; left: 10px; width: 28px !important; height: 28px !important; border-radius: 50% !important; border: 2px solid rgba(255,255,255,0.8); box-shadow: 0 2px 10px rgba(0,0,0,0.8); z-index: 10; transform: translateZ(30px); }
 
