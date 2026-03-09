@@ -2,20 +2,34 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CineCasal Premium</title>
-    <link rel="stylesheet" href="css/dashboard.css">
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#050505">
     <link rel="apple-touch-icon" href="assets/img/icon.png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/dashboard.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
     <div id="dynamic-bg" class="dashboard-bg"></div>
 
-    <div class="glass-container">
-        <header class="main-header glass-panel">
+    <div id="toast-container"></div>
+
+    <div id="ptr-indicator" class="ptr-indicator">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="glass-container" id="swipe-zone">
+        <header class="main-header" id="main-header">
             <div class="pair-info">
                 <div class="avatars">
                     <img id="my-header-avatar" class="av-sm" src="assets/img/sem-capa.png">
@@ -29,30 +43,32 @@
             
             <section id="agenda-section" class="view-section active">
                 
+                <div class="quote-of-the-day" id="daily-quote">"Carregando frase..."</div>
                 <div class="label-section">NOSSAS ESTATÍSTICAS</div>
                 <div class="stats-home-card glass-panel">
                     <div class="stats-home-grid">
-                        <div class="sh-item">
-                            <b id="home-stat-juntos">0</b>
-                            <small>Juntos</small>
-                        </div>
-                        <div class="sh-item">
-                            <b id="home-stat-media">0.0</b>
-                            <small>Média</small>
-                        </div>
-                        <div class="sh-item">
-                            <b id="home-stat-genre">-</b>
-                            <small>Gênero</small>
-                        </div>
+                        <div class="sh-item"><b id="home-stat-juntos">0</b><small>Juntos</small></div>
+                        <div class="sh-item"><b id="home-stat-media">0.0</b><small>Média (1-10)</small></div>
+                        <div class="sh-item"><b id="home-stat-genre">-</b><small>Gênero</small></div>
                     </div>
-                    <div class="critical-box">
-                        <div class="crit-icon">👑</div>
-                        <div class="crit-info">
-                            <small>O Mais Crítico</small>
-                            <b id="crit-name">Ninguém</b>
-                            <span id="crit-media">Média: -</span>
+                    
+                    <div class="dynamic-boxes">
+                        <div class="critical-box">
+                            <div class="crit-icon">👑</div>
+                            <div class="crit-info">
+                                <small>O Mais Crítico</small>
+                                <b id="crit-name">Ninguém</b>
+                                <span id="crit-media">Média: -</span>
+                            </div>
                         </div>
-                        <img id="crit-avatar" src="assets/img/sem-capa.png" class="crit-img">
+                        <div class="treta-box mt-10" id="treta-container">
+                            <div class="crit-icon" id="treta-emoji">🥊</div>
+                            <div class="crit-info">
+                                <small id="treta-label">Maior Treta</small>
+                                <b id="treta-movie">Paz reinando</b>
+                                <span id="treta-notas">-</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -67,46 +83,70 @@
                         <img src="assets/img/sem-capa.png" id="ticket-poster" class="ticket-img">
                     </div>
                     <div class="ticket-body">
-                        <h2 id="ticket-title">Escolha um filme</h2>
-                        <p id="ticket-date">A definir</p>
+                        <h2 id="ticket-title">Nenhum filme escolhido</h2>
+                        <p id="ticket-date">Toque abaixo para começar</p>
                         
-                        <div id="ticket-btns" class="btn-group">
-                            <button id="btn-roleta" class="btn-sq">🎲</button>
-                            <button id="btn-agendar" class="btn-pill">Agendar</button>
-                            <button id="btn-check" class="btn-sq">✓</button>
+                        <div id="ticket-btns" class="btn-group" style="flex-direction: column;">
+                            <button id="btn-choose-movie" class="btn-solid highlight full-width">🎬 Escolher Filme</button>
+                            <button id="btn-concluir-sessao" class="btn-solid highlight full-width hidden">✓ Concluir Sessão</button>
+                            <button id="btn-cancel-sessao" class="btn-text cancel hidden" style="margin-top:0;">Cancelar Escolha</button>
                         </div>
-
-                        <button id="btn-share-wa" class="btn-outline-sm hidden" style="margin-top: 12px; width: 100%; border-color: #25D366; color: #25D366; font-weight: 700;">📱 Convocar no WhatsApp</button>
+                        
+                        <button id="btn-share-wa" class="btn-outline-sm hidden" style="margin-top: 12px; width: 100%; border-color: #25D366; color: #25D366;">📱 Convocar</button>
 
                         <div id="pending-rating-box" class="hidden">
                             <p class="pending-alert">Aguardando avaliação</p>
-                            <button id="btn-open-rating" class="btn-solid highlight full-width">Avaliar Filme</button>
+                            <button id="btn-open-rating" class="btn-solid highlight full-width">⭐ Dar Nota</button>
                         </div>
+                    </div>
+                </div>
+
+                <div class="label-section mt-15">QUE TAL ESTE? (SURPRESA)</div>
+                <div id="suggestion-box" class="suggestion-card glass-panel" onclick="openMovieDetails(window.surpriseMovieId)">
+                    <img id="sug-poster" src="assets/img/sem-capa.png" class="sug-img">
+                    <div class="sug-info">
+                        <h4 id="sug-title">Buscando joia...</h4>
+                        <p>Nota TMDB: ⭐ <span id="sug-rating">-</span></p>
                     </div>
                 </div>
             </section>
 
             <section id="watchlist-section" class="view-section hidden">
-                <div class="label-section">QUEREMOS VER</div>
+                <div class="label-section">QUEREMOS VER (Segure o pôster para apagar)</div>
                 <div class="movie-grid" id="watchlist-grid"></div>
+                <div id="watchlist-empty" class="empty-state hidden">
+                    <span class="empty-emoji">🍿</span>
+                    <h3>Lista Vazia</h3>
+                    <p>Que tal pesquisar aquele filme que vocês estão enrolando pra ver?</p>
+                </div>
             </section>
 
             <section id="network-section" class="view-section hidden">
+                
                 <div class="profile-nav glass-panel">
                     <button class="n-tab active" id="tab-me">Meu Perfil</button>
                     <button class="n-tab" id="tab-partner">Parceiro</button>
+                </div>
+
+                <div id="tbt-banner" class="tbt-banner hidden">
+                    <h3>⏳ De Volta ao Passado!</h3>
+                    <p id="tbt-text">-</p>
                 </div>
 
                 <div class="profile-card glass-panel">
                     <img id="profile-avatar" class="av-lg">
                     <h2 id="profile-name">---</h2>
                     <p id="profile-bio">---</p>
-                    <button id="btn-edit-trigger" class="btn-outline-sm hidden">Editar Perfil</button>
+                    <button id="btn-edit-trigger" class="btn-outline-sm hidden mt-10">Editar Perfil</button>
                     
                     <div class="stats-row">
                         <div class="s-item"><b id="stat-vistos">0</b><small>Vistos</small></div>
                         <div class="s-item"><b id="stat-media">0.0</b><small>Média</small></div>
-                        <div class="s-item"><b id="stat-genre">-</b><small>Gênero Fav.</small></div>
+                        <div class="s-item"><b id="stat-genre">-</b><small>Favorito</small></div>
+                    </div>
+
+                    <div class="chart-container mt-15" style="position: relative; height:200px; width:100%">
+                        <canvas id="genreRadarChart"></canvas>
                     </div>
                 </div>
 
@@ -116,16 +156,36 @@
                     <button class="sub-btn" data-target="box-comum">Em Comum</button>
                 </div>
 
-                <div id="box-cronologia" class="prof-content active">
-                    <div class="history-list" id="history-timeline"></div>
-                </div>
+                <div id="box-cronologia" class="prof-content active"><div class="history-list" id="history-timeline"></div></div>
+                <div id="box-assistidos" class="prof-content"><div class="movie-grid" id="all-watched-grid"></div></div>
                 
-                <div id="box-assistidos" class="prof-content">
-                    <div class="movie-grid" id="all-watched-grid"></div>
-                </div>
-
                 <div id="box-comum" class="prof-content">
+                    
+                    <div id="hall-da-fama" class="hidden" style="margin-bottom: 20px;">
+                        <div class="label-section text-center">🏆 Filme do Mês</div>
+                        <div class="hall-card glass-panel" id="hall-card-bg">
+                            <div class="hall-crown">👑</div>
+                            <img id="hall-poster" src="assets/img/sem-capa.png" class="hall-img">
+                            <div class="hall-info">
+                                <h3 id="hall-title">Título</h3>
+                                <p id="hall-notas">Soma das notas: -</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sync-meter glass-panel">
+                        <h3>Sincronia de Casal</h3>
+                        <div class="sync-bar"><div id="sync-fill" class="sync-fill"></div></div>
+                        <p id="sync-text">Calculando...</p>
+                    </div>
+                    
                     <div class="shared-list" id="shared-movies-list"></div>
+                    
+                    <div id="shared-empty" class="empty-state hidden mt-15">
+                        <span class="empty-emoji">🎬</span>
+                        <h3>Nenhum Filme em Comum</h3>
+                        <p>Usem a roleta na Home para a primeira sessão juntos!</p>
+                    </div>
                 </div>
             </section>
         </main>
@@ -137,82 +197,146 @@
         </nav>
     </div>
 
+    <div id="modal-delete" class="overlay hidden">
+        <div class="bottom-sheet glass-panel swipeable-sheet">
+            <div class="sheet-pill drag-handle"></div>
+            <h3>Remover da Lista?</h3>
+            <p class="sub-text">Deseja apagar este filme?</p>
+            <button id="btn-confirm-delete" class="btn-solid mt-15" style="background: #ff453a; color: #fff;">Sim, Apagar</button>
+            <button onclick="closeModals()" class="btn-text cancel">Cancelar</button>
+        </div>
+    </div>
+
     <div id="modal-action" class="overlay hidden">
-        <div class="centered-card glass-panel">
+        <div class="bottom-sheet glass-panel swipeable-sheet">
+            <div class="sheet-pill drag-handle"></div>
             <h3 id="sheet-title">Título</h3>
-            <p id="sheet-desc" class="sub-text">Escolha uma ação</p>
             <div class="modal-options">
-                <button id="opt-watchlist" class="btn-solid">Adicionar à Lista</button>
-                <button id="opt-history" class="btn-outline">Já assisti sozinho</button>
-                <button onclick="closeModals()" class="btn-text cancel">Cancelar</button>
+                <button id="opt-watchlist" class="btn-solid">🎥 Adicionar à Lista</button>
+                <button id="opt-history" class="btn-outline">⭐ Já assisti sozinho</button>
             </div>
         </div>
     </div>
 
     <div id="modal-rating" class="overlay hidden">
-        <div class="centered-card glass-panel">
+        <div class="bottom-sheet glass-panel swipeable-sheet">
+            <div class="sheet-pill drag-handle"></div>
             <h3>Sua Avaliação</h3>
             <p id="rating-movie-title" class="sub-text">Filme</p>
-            <input type="number" id="input-rating" min="1" max="5" step="0.1" placeholder="Nota (ex: 4.5)" class="glass-input text-center">
-            <button id="btn-save-rating" class="btn-solid full-width">Validar Minha Nota</button>
-            <button onclick="closeModals()" class="btn-text cancel">Cancelar</button>
+            <input type="number" id="input-rating" min="1" max="10" step="0.5" placeholder="Nota de 1 a 10 (ex: 8.5)" class="glass-input text-center giant-input">
+            <button id="btn-save-rating" class="btn-solid highlight full-width mt-15">Confirmar Nota</button>
         </div>
     </div>
 
     <div id="modal-edit" class="overlay hidden">
-        <div class="centered-card glass-panel">
+        <div class="bottom-sheet glass-panel swipeable-sheet">
+            <div class="sheet-pill drag-handle"></div>
             <h3>Configurar Perfil</h3>
-            <input type="text" id="edit-name" class="glass-input" placeholder="Seu Nome">
-            <input type="text" id="edit-avatar" class="glass-input" placeholder="URL da Foto (ou use o upload)">
-            <input type="file" id="edit-avatar-file" class="glass-input" accept="image/*" style="padding: 10px;">
-            <textarea id="edit-bio" class="glass-input" placeholder="Biografia..."></textarea>
-            <button id="btn-save-profile" class="btn-solid full-width">Salvar</button>
-            <button onclick="closeModals()" class="btn-text cancel">Cancelar</button>
-        </div>
-    </div>
-
-    <div id="modal-schedule" class="overlay hidden">
-        <div class="centered-card glass-panel">
-            <h3>Agendar Filme</h3>
-            <select id="modal-movie-select" class="glass-input"></select>
-            <input type="date" id="modal-date" class="glass-input">
-            <button id="btn-confirm-schedule" class="btn-solid full-width">Confirmar Agenda</button>
-            <button onclick="closeModals()" class="btn-text cancel">Cancelar</button>
+            <div class="form-group">
+                <label>Seu Nome</label>
+                <input type="text" id="edit-name" class="glass-input" placeholder="Ex: Victor">
+            </div>
+            <div class="form-group">
+                <label>Alterar Foto</label>
+                <input type="file" id="edit-avatar-file" class="glass-input file-input" accept="image/*">
+            </div>
+            <div class="form-group">
+                <label>Biografia</label>
+                <textarea id="edit-bio" class="glass-input" placeholder="Uma frase de cinema..."></textarea>
+            </div>
+            <button id="btn-save-profile" class="btn-solid highlight full-width mt-15 btn-loading-ready">
+                <span class="btn-text-content">Salvar Alterações</span>
+                <span class="spinner-btn"></span>
+            </button>
         </div>
     </div>
 
     <div id="modal-movie-details" class="overlay hidden">
-        <div class="details-card glass-panel">
+        <div class="details-card glass-panel swipeable-sheet">
+            <div class="sheet-pill drag-handle" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 20;"></div>
             <button class="close-details" onclick="closeModals()">✕</button>
             
-            <div class="detail-header-img">
-                <img id="detail-poster" src="assets/img/sem-capa.png">
-                <div class="img-fade"></div>
+            <div id="detail-skeleton" style="width: 100%; height: 100%; padding: 20px; display: flex; flex-direction: column; gap: 15px; margin-top: 30px;">
+                <div class="skeleton" style="height: 200px; border-radius: 16px;"></div>
+                <div class="skeleton" style="height: 30px; width: 70%; border-radius: 8px;"></div>
+                <div class="skeleton" style="height: 15px; width: 40%; border-radius: 8px;"></div>
+                <div class="skeleton" style="height: 80px; border-radius: 16px;"></div>
+                <div class="skeleton" style="height: 100px; border-radius: 16px;"></div>
             </div>
-            
-            <div class="detail-info">
-                <h2 id="detail-title">Carregando...</h2>
-                
-                <div class="detail-meta">
-                    <span id="detail-year">-</span> •
-                    <span id="detail-runtime">-</span> •
-                    <span id="detail-genre">-</span>
+
+            <div id="detail-content" class="hidden">
+                <div class="detail-header-img">
+                    <img id="detail-poster" crossorigin="anonymous" src="assets/img/sem-capa.png">
+                    <div class="img-fade"></div>
                 </div>
-                
-                <div class="detail-crew">
-                    <p><strong>Direção:</strong> <span id="detail-director">-</span></p>
-                    <p><strong>Elenco:</strong> <span id="detail-cast">-</span></p>
+                <div class="detail-info">
+                    <h2 id="detail-title">Carregando...</h2>
+                    <div class="detail-meta">
+                        <span id="detail-year">-</span> • <span id="detail-runtime">-</span> • <span id="detail-genre">-</span>
+                    </div>
+                    
+                    <div class="streaming-box hidden" id="streaming-box">
+                        <p style="font-size: 10px; text-transform: uppercase; color: var(--text-sec); margin-bottom: 5px;">🍿 Onde Assistir</p>
+                        <div id="streaming-icons" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
+                    </div>
+
+                    <div class="detail-crew mt-15">
+                        <p><strong>Direção:</strong> <span id="detail-director">-</span></p>
+                        <p><strong>Elenco:</strong> <span id="detail-cast">-</span></p>
+                    </div>
+                    <div class="detail-synopsis"><p id="detail-overview">Buscando...</p></div>
                 </div>
-                
-                <div class="detail-synopsis">
-                    <p id="detail-overview">Buscando informações no banco de dados...</p>
-                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-choose-mode" class="overlay hidden">
+        <div class="bottom-sheet glass-panel swipeable-sheet">
+            <div class="sheet-pill drag-handle"></div>
+            <h3>Sessão Pipoca 🍿</h3>
+            <p class="sub-text">Como vamos escolher o filme de hoje?</p>
+            <div class="modal-options">
+                <button id="btn-mode-roleta" class="btn-solid">🎲 Sortear da Lista</button>
+                <button id="btn-mode-search" class="btn-outline">🔍 Pesquisar Agora</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-ticket-search" class="overlay hidden">
+        <div class="bottom-sheet glass-panel swipeable-sheet" style="min-height: 50vh;">
+            <div class="sheet-pill drag-handle"></div>
+            <h3>O que vamos ver?</h3>
+            <div class="search-wrapper glass-panel mt-15" style="margin-bottom: 0;">
+                <input type="text" id="ticket-search-input" class="glass-input" placeholder="Digite o nome do filme..." autocomplete="off">
+                <div id="ticket-search-results" class="results-flyout hidden" style="position: relative; top: 10px;"></div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase.js"></script>
+
+<div id="modal-walkout" class="overlay hidden" style="background: rgba(0,0,0,0.95); z-index: 9999;">
+        <div class="walkout-container">
+            <div class="walkout-glow" id="walkout-glow"></div>
+            <div class="walkout-card" id="walkout-card">
+                <div class="walkout-card-inner" id="walkout-card-inner">
+                    <div class="walkout-front">
+                        <div class="walkout-mystery-logo">?</div>
+                        <div class="walkout-stats">
+                            <span id="walkout-genre" class="w-stat hidden">Ação</span>
+                            <span id="walkout-year" class="w-stat hidden">2023</span>
+                        </div>
+                    </div>
+                    <div class="walkout-back">
+                        <img id="walkout-poster" src="assets/img/sem-capa.png">
+                    </div>
+                </div>
+            </div>
+            <h2 id="walkout-title" class="walkout-title hidden">Nome do Filme</h2>
+        </div>
+    </div>
+
     <script src="js/dashboard.js"></script>
 </body>
 </html>
