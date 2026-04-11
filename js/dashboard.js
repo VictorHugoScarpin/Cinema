@@ -128,7 +128,7 @@ function updateGlobalUI() {
         safeSetText('home-stat-juntos', sharedMovies.length);
     }
 
-    // Filtra apenas notas reais para as estatísticas
+    // Filtra apenas notas reais para as estatísticas (IGNORA 0 e null)
     const sharedMyNotes = myHistory.filter(h => sharedMovies.find(s => s.movie_id === h.movie_id && h.rating !== null && h.rating > 0));
     const sharedPartnerNotes = partnerHistory.filter(h => sharedMovies.find(s => s.movie_id === h.movie_id && h.rating !== null && h.rating > 0));
 
@@ -149,6 +149,62 @@ function updateGlobalUI() {
         else if (mediaPa < mediaMe) { critName = partnerName; critMedia = mediaPa.toFixed(1); critImg = partner?.avatar_url; } 
         else { critName = "Empate"; critMedia = mediaMe.toFixed(1); }
         safeSetText('crit-name', critName); safeSetText('crit-media', `Média: ${critMedia}`); safeSetSrc('crit-avatar', critImg || 'assets/img/sem-capa.png');
+
+        // === TRETA (IGNORANDO QUEM DORMIU) ===
+        let maxDiff = -1; let tretaMovie = null; let notasTreta = "";
+        sharedMovies.forEach(s => {
+            const mN = sharedMyNotes.find(x => x.movie_id === s.movie_id)?.rating;
+            const pN = sharedPartnerNotes.find(x => x.movie_id === s.movie_id)?.rating;
+            // Só calcula treta se os dois deram nota maior que 0
+            if (mN > 0 && pN > 0) { 
+                const diff = Math.abs(mN - pN);
+                if (diff > maxDiff) { 
+                    maxDiff = diff; tretaMovie = s.movies.title; 
+                    notasTreta = `Você: ⭐${mN} | ${partnerName}: ⭐${pN}`; 
+                }
+            }
+        });
+
+        const boxTreta = document.getElementById('treta-container');
+        if (boxTreta) {
+            boxTreta.style.background = maxDiff >= 3 ? 'rgba(255, 59, 48, 0.1)' : (maxDiff > 1 ? 'rgba(255, 159, 10, 0.1)' : 'rgba(52, 199, 89, 0.1)');
+            boxTreta.style.borderColor = maxDiff >= 3 ? 'rgba(255, 59, 48, 0.3)' : (maxDiff > 1 ? 'rgba(255, 159, 10, 0.3)' : 'rgba(52, 199, 89, 0.3)');
+            safeSetText('treta-emoji', maxDiff >= 3 ? '🥊' : (maxDiff > 1 ? '⚠️' : '🕊️'));
+            safeSetText('treta-label', maxDiff >= 3 ? 'Guerra Mundial' : (maxDiff > 1 ? 'Divergência' : 'Sintonia'));
+            
+            if (maxDiff > 1.0) { safeSetText('treta-movie', tretaMovie); safeSetText('treta-notas', notasTreta); } 
+            else { safeSetText('treta-movie', "Paz e Amor"); safeSetText('treta-notas', "Sintonia perfeita nas notas!"); }
+        }
+
+        // === SINCRONIA (IGNORANDO QUEM DORMIU) ===
+        let totalDiff = 0; let countDiff = 0;
+        sharedMovies.forEach(s => {
+            const mN = sharedMyNotes.find(x => x.movie_id === s.movie_id)?.rating;
+            const pN = sharedPartnerNotes.find(x => x.movie_id === s.movie_id)?.rating;
+            // Só calcula sincronia se os dois deram nota maior que 0
+            if(mN > 0 && pN > 0) { totalDiff += Math.abs(mN - pN); countDiff++; }
+        });
+        
+        if(countDiff > 0) {
+            const avgDiff = totalDiff / countDiff;
+            const syncPerc = Math.max(0, Math.min(100, Math.round(100 - (avgDiff / 9 * 100))));
+            const syncFill = document.getElementById('sync-fill');
+            if(syncFill) syncFill.style.width = `${syncPerc}%`;
+            let syncMsg = "";
+            if(syncPerc > 85) syncMsg = `${syncPerc}% - Almas Gêmeas 💖`;
+            else if (syncPerc > 60) syncMsg = `${syncPerc}% - Dão pro gasto 🍿`;
+            else syncMsg = `${syncPerc}% - Guerra no Sofá 🥊`;
+            safeSetText('sync-text', syncMsg);
+        } else {
+            const syncFill = document.getElementById('sync-fill');
+            if(syncFill) syncFill.style.width = `0%`;
+            safeSetText('sync-text', "Assistam juntos para calcular!");
+        }
+    } else {
+        safeSetText('home-stat-media', "0.0"); safeSetText('home-stat-genre', "-"); safeSetText('crit-name', "Ainda não");
+        const syncFill = document.getElementById('sync-fill');
+        if(syncFill) syncFill.style.width = `0%`;
+        safeSetText('sync-text', "Calculando...");
     }
 
     // ==========================================
