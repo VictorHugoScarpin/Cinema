@@ -11,7 +11,7 @@ let selectedMovie = null;
 let currentTicketMovie = null;
 let currentTicketDate = null;
 let pendingRatingId = null;
-let radarChartInstance = null; 
+let radarChartInstance = null;
 
 let longPressItemToDelete = null; // Guarda ID para deletar segurando
 let deleteItemType = null; // NOVO: Guarda de onde estamos deletando ('watchlist' ou 'history')
@@ -23,8 +23,8 @@ const haptic = () => { if (navigator.vibrate) navigator.vibrate(40); };
 // PARALLAX MÁGICO
 window.addEventListener('deviceorientation', (e) => {
     const bg = document.getElementById('dynamic-bg');
-    if(!bg) return;
-    const tiltX = Math.min(Math.max(e.gamma, -30), 30); 
+    if (!bg) return;
+    const tiltX = Math.min(Math.max(e.gamma, -30), 30);
     const tiltY = Math.min(Math.max(e.beta, -30), 30);
     bg.style.transform = `translate(${tiltX * 0.5}px, ${tiltY * 0.5}px) scale(1.15)`;
 });
@@ -43,7 +43,7 @@ function showToast(msg) {
 // BOTAO LOADING
 function setBtnLoading(btnId, isLoading) {
     const btn = document.getElementById(btnId);
-    if(isLoading) { btn.classList.add('btn-loading'); btn.disabled = true; }
+    if (isLoading) { btn.classList.add('btn-loading'); btn.disabled = true; }
     else { btn.classList.remove('btn-loading'); btn.disabled = false; }
 }
 
@@ -92,7 +92,7 @@ async function loadData() {
     watchlist = wData || [];
 
     const scheduledItem = watchlist.find(w => w.scheduled_date !== null);
-    if (scheduledItem) { currentTicketMovie = scheduledItem.movies; currentTicketDate = scheduledItem.scheduled_date; } 
+    if (scheduledItem) { currentTicketMovie = scheduledItem.movies; currentTicketDate = scheduledItem.scheduled_date; }
     else { currentTicketMovie = null; currentTicketDate = null; }
 
     const { data: hData } = await supabaseClient.from('watched').select('*, movies(*)').eq('user_id', currentUser.id).order('watched_at', { ascending: false });
@@ -160,7 +160,6 @@ function updateGlobalUI() {
                 if (diff > maxDiff) { 
                     maxDiff = diff; 
                     tretaMovie = s.movies.title; 
-                    // Agora ele usa o nome real da pessoa em vez de "Ela"
                     notasTreta = `Você: ⭐${mN} | ${partnerName}: ⭐${pN}`; 
                 }
             }
@@ -186,7 +185,7 @@ function updateGlobalUI() {
         });
         if(countDiff > 0) {
             const avgDiff = totalDiff / countDiff;
-            const syncPerc = Math.max(0, Math.min(100, Math.round(100 - (avgDiff / 9 * 100)))); // Base 9 pq 10-1
+            const syncPerc = Math.max(0, Math.min(100, Math.round(100 - (avgDiff / 9 * 100)))); 
             const syncFill = document.getElementById('sync-fill');
             if(syncFill) syncFill.style.width = `${syncPerc}%`;
             let syncMsg = "";
@@ -207,25 +206,40 @@ function updateGlobalUI() {
     } else {
         safeDisplay('ticket-btns', true); safeDisplay('pending-rating-box', false); pendingRatingId = null;
         if (currentTicketMovie) {
-            safeSetText('ticket-title', currentTicketMovie.title); safeSetSrc('ticket-poster', currentTicketMovie.poster_url);
-            safeSetText('ticket-date', `Sessão de Hoje`);
-            document.getElementById('dynamic-bg').style.backgroundImage = `url('${currentTicketMovie.poster_url}')`;
-            
-            // Troca os botões
-            safeDisplay('btn-choose-movie', false);
-            safeDisplay('btn-concluir-sessao', true);
-            safeDisplay('btn-cancel-sessao', true);
-            safeDisplay('btn-share-wa', true);
-            
-            const btnShare = document.getElementById('btn-share-wa');
-            if(btnShare) {
-                btnShare.onclick = () => { haptic(); window.open(`https://wa.me/?text=${encodeURIComponent(`🍿 *Sessão CineCasal!*\n\nFilme marcado: *${currentTicketMovie.title}*\n\nPrepara a pipoca! ❤️`)}`, '_blank'); };
+            // Verifica se a pessoa já respondeu a sessão atual
+            const meResponded = myHistory.find(h => h.movie_id === currentTicketMovie.id);
+            if (meResponded) {
+                // SE JÁ RESPONDEU: Destrava a tela completamente!
+                safeSetText('ticket-title', "Ingresso Liberado");
+                safeSetSrc('ticket-poster', "assets/img/sem-capa.png");
+                safeSetText('ticket-date', `Você terminou! Aguardando a nota de ${partnerName}...`);
+                document.getElementById('dynamic-bg').style.backgroundImage = `url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba')`;
+                
+                // Restaura o botão de Escolher Filme
+                safeDisplay('btn-choose-movie', true);
+                safeDisplay('btn-concluir-sessao', false);
+                safeDisplay('btn-cancel-sessao', false);
+                safeDisplay('btn-share-wa', false);
+            } else {
+                // SE AINDA NÃO RESPONDEU: Mostra o ingresso normal
+                safeSetText('ticket-title', currentTicketMovie.title); safeSetSrc('ticket-poster', currentTicketMovie.poster_url);
+                safeSetText('ticket-date', `Sessão de Hoje`);
+                document.getElementById('dynamic-bg').style.backgroundImage = `url('${currentTicketMovie.poster_url}')`;
+                
+                safeDisplay('btn-choose-movie', false);
+                safeDisplay('btn-concluir-sessao', true);
+                safeDisplay('btn-cancel-sessao', true);
+                safeDisplay('btn-share-wa', true);
+                
+                const btnShare = document.getElementById('btn-share-wa');
+                if(btnShare) {
+                    btnShare.onclick = () => { haptic(); window.open(`https://wa.me/?text=${encodeURIComponent(`🍿 *Sessão CineCasal!*\n\nFilme marcado: *${currentTicketMovie.title}*\n\nPrepara a pipoca! ❤️`)}`, '_blank'); };
+                }
             }
         } else {
             safeSetText('ticket-title', "Nenhum filme escolhido"); safeSetSrc('ticket-poster', "assets/img/sem-capa.png"); safeSetText('ticket-date', "Toque abaixo para começar");
             document.getElementById('dynamic-bg').style.backgroundImage = `url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba')`;
             
-            // Volta para o estado inicial
             safeDisplay('btn-choose-movie', true);
             safeDisplay('btn-concluir-sessao', false);
             safeDisplay('btn-cancel-sessao', false);
@@ -238,21 +252,21 @@ function updateGlobalUI() {
 function setupHeaderBlur() {
     window.addEventListener('scroll', () => {
         const header = document.getElementById('main-header');
-        if(window.scrollY > 20) header.classList.add('scrolled'); else header.classList.remove('scrolled');
+        if (window.scrollY > 20) header.classList.add('scrolled'); else header.classList.remove('scrolled');
     });
 }
 
 function setupPullToRefresh() {
     let startY = 0; const ptr = document.getElementById('ptr-indicator');
-    document.body.addEventListener('touchstart', e => { if(window.scrollY === 0) startY = e.touches[0].clientY; }, {passive:true});
+    document.body.addEventListener('touchstart', e => { if (window.scrollY === 0) startY = e.touches[0].clientY; }, { passive: true });
     document.body.addEventListener('touchmove', e => {
-        if(window.scrollY === 0 && startY > 0) {
+        if (window.scrollY === 0 && startY > 0) {
             const pull = e.touches[0].clientY - startY;
-            if(pull > 20 && pull < 100) { ptr.classList.add('active'); ptr.style.transform = `translateY(${pull/2}px)`; }
+            if (pull > 20 && pull < 100) { ptr.classList.add('active'); ptr.style.transform = `translateY(${pull / 2}px)`; }
         }
-    }, {passive:true});
+    }, { passive: true });
     document.body.addEventListener('touchend', async e => {
-        if(ptr.classList.contains('active')) {
+        if (ptr.classList.contains('active')) {
             haptic(); ptr.classList.add('spinning');
             await loadData(); // Recarrega os dados
             ptr.style.transform = `translateY(-20px)`; ptr.classList.remove('active', 'spinning');
@@ -265,15 +279,15 @@ function setupPullToRefresh() {
 function setupSwipeGestures() {
     let startX = 0; let endX = 0; const zone = document.getElementById('swipe-zone');
     const tabs = ['agenda-section', 'watchlist-section', 'network-section'];
-    zone.addEventListener('touchstart', e => { startX = e.changedTouches[0].screenX; }, {passive: true});
+    zone.addEventListener('touchstart', e => { startX = e.changedTouches[0].screenX; }, { passive: true });
     zone.addEventListener('touchend', e => {
-        if(document.querySelector('.overlay:not(.hidden)')) return; 
+        if (document.querySelector('.overlay:not(.hidden)')) return;
         endX = e.changedTouches[0].screenX;
         const activeTab = document.querySelector('.t-item.active').getAttribute('data-target');
         let idx = tabs.indexOf(activeTab);
-        if (endX < startX - 70 && idx < 2) document.querySelector(`.t-item[data-target="${tabs[idx+1]}"]`).click();
-        if (endX > startX + 70 && idx > 0) document.querySelector(`.t-item[data-target="${tabs[idx-1]}"]`).click();
-    }, {passive: true});
+        if (endX < startX - 70 && idx < 2) document.querySelector(`.t-item[data-target="${tabs[idx + 1]}"]`).click();
+        if (endX > startX + 70 && idx > 0) document.querySelector(`.t-item[data-target="${tabs[idx - 1]}"]`).click();
+    }, { passive: true });
 }
 
 // === GESTOS DE ABAS E MODAIS ===
@@ -293,8 +307,8 @@ function setupGlobalModals() {
         haptic();
         document.querySelectorAll('.swipeable-sheet').forEach(sheet => {
             sheet.classList.remove('open');
-            setTimeout(() => { 
-                sheet.parentElement.classList.add('hidden'); 
+            setTimeout(() => {
+                sheet.parentElement.classList.add('hidden');
                 sheet.style.transform = ''; // Devolve a gaveta pro topo para o próximo uso
             }, 300);
         });
@@ -314,15 +328,15 @@ function setupGlobalModals() {
     document.querySelectorAll('.drag-handle').forEach(handle => {
         let sy = 0;
         const sheet = handle.parentElement; // Pega a gaveta inteira
-        
-        handle.addEventListener('touchstart', e => sy = e.touches[0].clientY, {passive:true});
+
+        handle.addEventListener('touchstart', e => sy = e.touches[0].clientY, { passive: true });
         handle.addEventListener('touchmove', e => {
             const pull = e.touches[0].clientY - sy;
-            if(pull > 0) sheet.style.transform = `translateY(${pull}px)`;
-        }, {passive:true});
+            if (pull > 0) sheet.style.transform = `translateY(${pull}px)`;
+        }, { passive: true });
         handle.addEventListener('touchend', e => {
             const pull = e.changedTouches[0].clientY - sy;
-            if(pull > 100) {
+            if (pull > 100) {
                 closeModals(); // Puxou bastante para baixo, fecha!
             } else {
                 sheet.style.transform = ''; // Desistiu de puxar, volta pro lugar
@@ -386,19 +400,20 @@ function runTearAnimation(callback) {
     clone.style.zIndex = '999999';
     clone.style.pointerEvents = 'none';
     document.body.appendChild(clone);
-    
-    originalPoster.style.opacity = '0'; 
+
+    originalPoster.style.opacity = '0';
     clone.offsetHeight; // Força renderização
     clone.classList.add('tear-and-fall');
-    
+
     setTimeout(() => {
         clone.remove();
         originalPoster.style.opacity = '1';
         originalPoster.src = 'assets/img/sem-capa.png';
         if (callback) callback();
-    }, 1200); 
+    }, 1200);
 }
 
+// === AÇÕES DO NOVO INGRESSO ===
 // === AÇÕES DO NOVO INGRESSO ===
 function setupTicketActions() {
     
@@ -516,6 +531,16 @@ function setupTicketActions() {
         });
     }
 
+    // Função para deletar o ingresso APENAS quando os dois responderem
+    async function checkAndDeleteWatchlist(movieId) {
+        if (!partner) return;
+        const { data: paEx } = await supabaseClient.from('watched').select('id').eq('user_id', partner.id).eq('movie_id', movieId).single();
+        if (paEx) {
+            // Se o parceiro já tem registro (assistiu ou dormiu), a sessão finalizou pra ambos!
+            await supabaseClient.from('watchlist').delete().eq('movie_id', movieId);
+        }
+    }
+
     // Botão de Concluir a Sessão (Abre o modal de status da sessão individual)
     const btnConcluir = document.getElementById('btn-concluir-sessao');
     if (btnConcluir) {
@@ -530,40 +555,40 @@ function setupTicketActions() {
     const btnStatusViTudo = document.getElementById('btn-status-vi-tudo');
     if (btnStatusViTudo) {
         btnStatusViTudo.onclick = async () => {
-            haptic();
-            closeModals();
-            
-            // Verifica se você já deu nota para este filme no passado
+            haptic(); closeModals();
             const { data: meEx } = await supabaseClient.from('watched').select('*').eq('user_id', currentUser.id).eq('movie_id', currentTicketMovie.id).single();
 
             const finalizar = async () => {
-                await syncPartnerHistory();
-                
-                if (meEx && meEx.rating !== null) {
-                    // Se já tem nota, pergunta se quer atualizar
+                if (meEx && meEx.rating !== null && meEx.rating > 0) {
+                    // Já tem nota, pergunta se quer atualizar
                     setTimeout(() => {
                         document.getElementById('old-rating-display').innerText = `⭐ ${meEx.rating}`;
                         openModal('modal-update-rating');
                         
-                        document.getElementById('btn-keep-rating').onclick = () => { 
-                            haptic();
-                            closeModals(); 
-                            concluirEFinalizar(); 
+                        document.getElementById('btn-keep-rating').onclick = async () => { 
+                            haptic(); closeModals(); 
+                            await checkAndDeleteWatchlist(currentTicketMovie.id);
+                            currentTicketMovie = null; loadData(); 
                         };
                         document.getElementById('btn-change-rating').onclick = async () => {
-                            haptic();
-                            closeModals();
+                            haptic(); closeModals();
                             await supabaseClient.from('watched').update({ rating: null }).eq('id', meEx.id);
-                            concluirEFinalizar();
+                            await checkAndDeleteWatchlist(currentTicketMovie.id);
+                            currentTicketMovie = null; loadData();
                         };
-                    }, 500); // Aguarda a animação do ingresso rasgando
+                    }, 500);
                 } else {
-                    // Se não tem nota ou nunca viu, apenas segue para a tela de notas
-                    if (!meEx) await supabaseClient.from('watched').insert({ user_id: currentUser.id, movie_id: currentTicketMovie.id, rating: null });
-                    concluirEFinalizar();
+                    // Nunca viu (ou tinha dormido antes) -> Vai para pendente
+                    if (!meEx) {
+                        await supabaseClient.from('watched').insert({ user_id: currentUser.id, movie_id: currentTicketMovie.id, rating: null });
+                    } else if (meEx.rating === -1) {
+                        await supabaseClient.from('watched').update({ rating: null }).eq('id', meEx.id);
+                    }
+                    
+                    await checkAndDeleteWatchlist(currentTicketMovie.id);
+                    currentTicketMovie = null; loadData();
                 }
             };
-
             runTearAnimation(finalizar);
         };
     }
@@ -572,34 +597,19 @@ function setupTicketActions() {
     const btnStatusDormi = document.getElementById('btn-status-dormi');
     if (btnStatusDormi) {
         btnStatusDormi.onclick = async () => {
-            haptic();
-            closeModals();
-            
+            haptic(); closeModals();
             runTearAnimation(async () => {
-                // 1. Manda para o histórico do parceiro (fica pendente para ele avaliar no app dele)
-                await syncPartnerHistory();
+                // Insere com nota -1 (código secreto para "Dormiu", ignora pedir nota)
+                const { data: meEx } = await supabaseClient.from('watched').select('id').eq('user_id', currentUser.id).eq('movie_id', currentTicketMovie.id).single();
+                if (!meEx) {
+                    await supabaseClient.from('watched').insert({ user_id: currentUser.id, movie_id: currentTicketMovie.id, rating: -1 });
+                }
                 
-                // 2. O SEGREDO: Nós NÃO inserimos no seu histórico! 
-                // Como você não assistiu, não criamos a pendência, e a tela de "Dar nota" não aparece.
-                // Quando você assistir de verdade no futuro, é só pesquisar e adicionar.
-                
-                concluirEFinalizar();
-                showToast("Sessão encerrada! Você dormiu 😴");
+                await checkAndDeleteWatchlist(currentTicketMovie.id);
+                currentTicketMovie = null; loadData();
+                showToast("Sessão registrada! Você dormiu 😴");
             });
         };
-    }
-
-    // Funções auxiliares para manter o código limpo
-    async function syncPartnerHistory() {
-        if (!partner) return;
-        const { data: paEx } = await supabaseClient.from('watched').select('id').eq('user_id', partner.id).eq('movie_id', currentTicketMovie.id).single();
-        if (!paEx) await supabaseClient.from('watched').insert({ user_id: partner.id, movie_id: currentTicketMovie.id, rating: null });
-    }
-
-    async function concluirEFinalizar() {
-        await supabaseClient.from('watchlist').delete().eq('movie_id', currentTicketMovie.id);
-        currentTicketMovie = null;
-        loadData();
     }
 
     // Botão de Cancelar a Escolha
@@ -674,7 +684,7 @@ function setupSearchAndActionSheet() {
                 div.onclick = () => {
                     haptic(); selectedMovie = m;
                     document.getElementById('sheet-title').innerText = m.title;
-                    openModal('modal-action'); flyout.classList.add('hidden'); input.value = ''; 
+                    openModal('modal-action'); flyout.classList.add('hidden'); input.value = '';
                 };
                 flyout.appendChild(div);
             });
@@ -682,18 +692,18 @@ function setupSearchAndActionSheet() {
     });
 
     document.getElementById('opt-watchlist').onclick = async () => {
-        if(!selectedMovie) return;
+        if (!selectedMovie) return;
         const m = await syncMovieWithDB(selectedMovie);
         const { error } = await supabaseClient.from('watchlist').insert({ movie_id: m.id, added_by: currentUser.id });
-        if(error) showToast("Filme já está na lista!"); else showToast("Adicionado à Lista! 🎥");
+        if (error) showToast("Filme já está na lista!"); else showToast("Adicionado à Lista! 🎥");
         closeModals(); loadData();
     };
 
     document.getElementById('opt-history').onclick = async () => {
-        if(!selectedMovie) return;
+        if (!selectedMovie) return;
         const m = await syncMovieWithDB(selectedMovie);
         const { data: ex } = await supabaseClient.from('watched').select('id').eq('user_id', currentUser.id).eq('movie_id', m.id).single();
-        if(!ex) await supabaseClient.from('watched').insert({ user_id: currentUser.id, movie_id: m.id, rating: null });
+        if (!ex) await supabaseClient.from('watched').insert({ user_id: currentUser.id, movie_id: m.id, rating: null });
         closeModals(); loadData(); showToast("Adicionado ao Histórico!");
     };
 }
@@ -708,7 +718,7 @@ async function openMovieDetails(tmdbId) {
     try {
         const res = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=pt-BR&append_to_response=credits`);
         const movie = await res.json();
-        
+
         document.getElementById('detail-poster').src = movie.backdrop_path ? `https://image.tmdb.org/t/p/w500${movie.backdrop_path}` : (movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'assets/img/sem-capa.png');
         document.getElementById('detail-title').innerText = movie.title;
         document.getElementById('detail-year').innerText = movie.release_date ? movie.release_date.split('-')[0] : 'N/A';
@@ -736,40 +746,40 @@ async function openMovieDetails(tmdbId) {
             document.getElementById('detail-skeleton').classList.add('hidden');
             document.getElementById('detail-content').classList.remove('hidden');
         }, 300); // pequeno delay para suavidade
-    } catch(e) {}
+    } catch (e) { }
 
-// CÓDIGO DO CAMALEÃO (EXTRAI A COR DO PÔSTER)
-        const imgEl = document.getElementById('detail-poster');
-        imgEl.crossOrigin = "Anonymous";
-        imgEl.onload = () => {
-            try {
-                const colorThief = new ColorThief();
-                const color = colorThief.getColor(imgEl);
-                document.documentElement.style.setProperty('--chameleon-color', `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.8)`);
-            } catch(e) { document.documentElement.style.setProperty('--chameleon-color', `#007aff`); }
-        };
-        imgEl.src = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'assets/img/sem-capa.png';
+    // CÓDIGO DO CAMALEÃO (EXTRAI A COR DO PÔSTER)
+    const imgEl = document.getElementById('detail-poster');
+    imgEl.crossOrigin = "Anonymous";
+    imgEl.onload = () => {
+        try {
+            const colorThief = new ColorThief();
+            const color = colorThief.getColor(imgEl);
+            document.documentElement.style.setProperty('--chameleon-color', `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.8)`);
+        } catch (e) { document.documentElement.style.setProperty('--chameleon-color', `#007aff`); }
+    };
+    imgEl.src = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'assets/img/sem-capa.png';
 
-        // ONDE ASSISTIR + DEEP LINKS MÁGICOS
-        const streamBox = document.getElementById('streaming-box');
-        const streamIcons = document.getElementById('streaming-icons');
-        streamBox.classList.add('hidden'); streamIcons.innerHTML = '';
-        const provRes = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/watch/providers?api_key=${TMDB_API_KEY}`);
-        const provData = await provRes.json();
-        const brProviders = provData.results?.BR?.flatrate;
-        
-        if (brProviders && brProviders.length > 0) {
-            streamBox.classList.remove('hidden');
-            brProviders.forEach(p => { 
-                // Esquema de Deep Links para abrir direto nos Apps (Netflix, Prime, Disney)
-                let link = provData.results.BR.link; // Link padrão do JustWatch
-                if(p.provider_id === 8) link = `nflx://`; 
-                if(p.provider_id === 119) link = `primevideo://`;
-                if(p.provider_id === 337) link = `disneyplus://`;
-                
-                streamIcons.innerHTML += `<a href="${link}" target="_blank"><img src="https://image.tmdb.org/t/p/w92${p.logo_path}" class="prov-icon"></a>`; 
-            });
-        }
+    // ONDE ASSISTIR + DEEP LINKS MÁGICOS
+    const streamBox = document.getElementById('streaming-box');
+    const streamIcons = document.getElementById('streaming-icons');
+    streamBox.classList.add('hidden'); streamIcons.innerHTML = '';
+    const provRes = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/watch/providers?api_key=${TMDB_API_KEY}`);
+    const provData = await provRes.json();
+    const brProviders = provData.results?.BR?.flatrate;
+
+    if (brProviders && brProviders.length > 0) {
+        streamBox.classList.remove('hidden');
+        brProviders.forEach(p => {
+            // Esquema de Deep Links para abrir direto nos Apps (Netflix, Prime, Disney)
+            let link = provData.results.BR.link; // Link padrão do JustWatch
+            if (p.provider_id === 8) link = `nflx://`;
+            if (p.provider_id === 119) link = `primevideo://`;
+            if (p.provider_id === 337) link = `disneyplus://`;
+
+            streamIcons.innerHTML += `<a href="${link}" target="_blank"><img src="https://image.tmdb.org/t/p/w92${p.logo_path}" class="prov-icon"></a>`;
+        });
+    }
 
 }
 
@@ -781,16 +791,16 @@ async function fetchSurpriseSuggestion() {
         const data = await res.json();
         const blockList = [...myHistory.map(h => h.movies.tmdb_id), ...partnerHistory.map(h => h.movies.tmdb_id), ...watchlist.map(w => w.movies.tmdb_id)];
         const joia = data.results.find(m => !blockList.includes(m.id));
-        if(joia) {
+        if (joia) {
             window.surpriseMovieId = joia.id;
             window.surpriseMovieData = joia; // Guarda o objeto do filme na memória
             document.getElementById('sug-title').innerText = joia.title;
             document.getElementById('sug-rating').innerText = joia.vote_average.toFixed(1);
             document.getElementById('sug-poster').src = `https://image.tmdb.org/t/p/w92${joia.poster_path}`;
-        } else { 
-            document.getElementById('suggestion-box').classList.add('hidden'); 
+        } else {
+            document.getElementById('suggestion-box').classList.add('hidden');
         }
-    } catch(e) {}
+    } catch (e) { }
 }
 
 // Ação do botão ➕ na Surpresa
@@ -799,16 +809,16 @@ if (btnAddSurprise) {
     btnAddSurprise.onclick = async (e) => {
         e.stopPropagation(); // Mágica: Impede o clique de "vazar" pro card e abrir os detalhes
         haptic();
-        
+
         if (!window.surpriseMovieData) return;
-        
+
         btnAddSurprise.innerText = "⏳";
         btnAddSurprise.disabled = true;
-        
+
         // Salva o filme no banco de dados
         const m = await syncMovieWithDB(window.surpriseMovieData);
         const { error } = await supabaseClient.from('watchlist').insert({ movie_id: m.id, added_by: currentUser.id });
-        
+
         btnAddSurprise.innerText = "➕";
         btnAddSurprise.disabled = false;
 
@@ -826,48 +836,48 @@ if (btnAddSurprise) {
 function renderWatchlist() {
     const grid = document.getElementById('watchlist-grid');
     grid.innerHTML = '';
-    
+
     // EMPTY STATE
-    if(watchlist.length === 0) {
+    if (watchlist.length === 0) {
         document.getElementById('watchlist-empty').classList.remove('hidden');
     } else {
         document.getElementById('watchlist-empty').classList.add('hidden');
         watchlist.forEach(w => {
             const div = document.createElement('div');
             div.className = 'movie-card';
-            
+
             const adder = allProfiles.find(p => p.id === w.added_by);
             const avatarImg = adder?.avatar_url ? `<img src="${adder.avatar_url}" class="added-by-badge">` : '';
 
             div.innerHTML = `${avatarImg}<img src="${w.movies.poster_url}">`;
-            
+
             // Clica para abrir detalhes
             div.onclick = () => openMovieDetails(w.movies.tmdb_id);
-            
+
             // LONG PRESS PARA APAGAR
             let pressTimer;
             div.addEventListener('touchstart', e => {
-                pressTimer = setTimeout(() => { 
-                    haptic(); 
-                    longPressItemToDelete = w.id; 
-                    deleteItemType = 'watchlist'; 
+                pressTimer = setTimeout(() => {
+                    haptic();
+                    longPressItemToDelete = w.id;
+                    deleteItemType = 'watchlist';
                     document.querySelector('#modal-delete h3').innerText = 'Remover da Lista?';
                     document.querySelector('#modal-delete .sub-text').innerText = 'Deseja apagar este filme da sua lista?';
-                    openModal('modal-delete'); 
+                    openModal('modal-delete');
                 }, 800);
-            }, {passive:true});
+            }, { passive: true });
             div.addEventListener('touchend', () => clearTimeout(pressTimer));
             div.addEventListener('touchmove', () => clearTimeout(pressTimer));
             grid.appendChild(div);
         });
-        
+
         // Ativa o Tilt 3D
         VanillaTilt.init(document.querySelectorAll(".movie-card"), { max: 15, speed: 400, glare: true, "max-glare": 0.2 });
     }
 }
 
 document.getElementById('btn-confirm-delete').onclick = async () => {
-    if(longPressItemToDelete) {
+    if (longPressItemToDelete) {
         if (deleteItemType === 'watchlist') {
             await supabaseClient.from('watchlist').delete().eq('id', longPressItemToDelete);
         } else if (deleteItemType === 'history') {
@@ -883,7 +893,7 @@ async function renderProfile(uid) {
     if (!uid) return;
     const isMe = uid === currentUser.id;
     const prof = allProfiles.find(p => p.id === uid);
-    
+
     document.getElementById('profile-name').innerText = prof?.name || (isMe ? "Eu" : "Parceiro");
     document.getElementById('profile-avatar').src = prof?.avatar_url || 'assets/img/sem-capa.png';
     document.getElementById('profile-bio').innerText = prof?.bio || "Sem biografia.";
@@ -891,13 +901,14 @@ async function renderProfile(uid) {
     else document.getElementById('btn-edit-trigger').classList.add('hidden');
 
     const hist = isMe ? myHistory : partnerHistory;
-    const rated = hist.filter(h => h.rating !== null);
+    // Pega só notas válidas (ignora null e -1)
+    const rated = hist.filter(h => h.rating !== null && h.rating > 0);
 
     document.getElementById('stat-vistos').innerText = rated.length;
-    document.getElementById('stat-media').innerText = rated.length ? (rated.reduce((a,b)=>a+parseFloat(b.rating),0)/rated.length).toFixed(1) : "0.0";
-    
+    document.getElementById('stat-media').innerText = rated.length ? (rated.reduce((a, b) => a + parseFloat(b.rating), 0) / rated.length).toFixed(1) : "0.0";
+
     const counts = {};
-    rated.forEach(h => { const g = h.movies.genre; if(g && g !== "Variado") counts[g] = (counts[g]||0) + 1; });
+    rated.forEach(h => { const g = h.movies.genre; if (g && g !== "Variado") counts[g] = (counts[g] || 0) + 1; });
     if (Object.keys(counts).length) document.getElementById('stat-genre').innerText = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
     else document.getElementById('stat-genre').innerText = "-";
 
@@ -906,7 +917,7 @@ async function renderProfile(uid) {
     const labels = Object.keys(counts).slice(0, 5);
     const dataVals = Object.values(counts).slice(0, 5);
 
-    if(labels.length > 2) {
+    if (labels.length > 2) {
         document.getElementById('genreRadarChart').style.display = 'block';
         radarChartInstance = new Chart(ctx, {
             type: 'radar',
@@ -915,58 +926,51 @@ async function renderProfile(uid) {
         });
     } else document.getElementById('genreRadarChart').style.display = 'none';
 
-    // === CRONOLOGIA (Timeline) ===
     const tl = document.getElementById('history-timeline'); tl.innerHTML = '';
     hist.forEach(h => {
         const div = document.createElement('div'); div.className = 'h-item'; div.setAttribute('data-bg', h.movies.poster_url);
-        
-        // NOVO: Lógica de segurar para apagar na Cronologia
+
         let pressTimer;
         div.addEventListener('touchstart', e => {
-            pressTimer = setTimeout(() => { 
-                if (isMe) { 
-                    haptic(); 
-                    longPressItemToDelete = h.id; 
-                    deleteItemType = 'history'; 
+            pressTimer = setTimeout(() => {
+                if (isMe) {
+                    haptic(); longPressItemToDelete = h.id; deleteItemType = 'history';
                     document.querySelector('#modal-delete h3').innerText = 'Apagar do Histórico?';
                     document.querySelector('#modal-delete .sub-text').innerText = 'Deseja apagar este filme dos seus assistidos?';
-                    openModal('modal-delete'); 
+                    openModal('modal-delete');
                 }
             }, 800);
-        }, {passive:true});
+        }, { passive: true });
         div.addEventListener('touchend', () => clearTimeout(pressTimer));
         div.addEventListener('touchmove', () => clearTimeout(pressTimer));
 
         div.onclick = () => openMovieDetails(h.movies.tmdb_id);
-        const notaText = h.rating ? `⭐ ${h.rating}` : `<span style="color:#ff9f0a">Pendente</span>`;
+
+        // Exibe "Dormiu" ou a Nota
+        const notaText = h.rating && h.rating > 0 ? `⭐ ${h.rating}` : (h.rating === -1 ? `<span style="color:#8e8e93">Dormiu 😴</span>` : `<span style="color:#ff9f0a">Pendente</span>`);
         div.innerHTML = `<img src="${h.movies.poster_url}" class="h-poster"><div><h4 style="font-size:14px; margin-bottom:5px; font-family: var(--font-title);">${h.movies.title}</h4><span style="font-size:12px; opacity:0.6;">Nota: ${notaText}</span></div>`;
         tl.appendChild(div);
     });
 
     const obs = new IntersectionObserver((entries) => {
-        entries.forEach(e => { if(e.isIntersecting) document.getElementById('dynamic-bg').style.backgroundImage = `url('${e.target.getAttribute('data-bg')}')`; });
+        entries.forEach(e => { if (e.isIntersecting) document.getElementById('dynamic-bg').style.backgroundImage = `url('${e.target.getAttribute('data-bg')}')`; });
     }, { threshold: 0.7 });
     document.querySelectorAll('.h-item').forEach(i => obs.observe(i));
 
-    // === TODOS OS ASSISTIDOS (Grid) ===
     const gridAll = document.getElementById('all-watched-grid'); gridAll.innerHTML = '';
     hist.forEach(h => {
         const div = document.createElement('div'); div.className = 'movie-card';
-        
-        // NOVO: Lógica de segurar para apagar no Grid
         let pressTimer;
         div.addEventListener('touchstart', e => {
-            pressTimer = setTimeout(() => { 
-                if (isMe) { 
-                    haptic(); 
-                    longPressItemToDelete = h.id; 
-                    deleteItemType = 'history'; 
+            pressTimer = setTimeout(() => {
+                if (isMe) {
+                    haptic(); longPressItemToDelete = h.id; deleteItemType = 'history';
                     document.querySelector('#modal-delete h3').innerText = 'Apagar do Histórico?';
                     document.querySelector('#modal-delete .sub-text').innerText = 'Deseja apagar este filme dos seus assistidos?';
-                    openModal('modal-delete'); 
+                    openModal('modal-delete');
                 }
             }, 800);
-        }, {passive:true});
+        }, { passive: true });
         div.addEventListener('touchend', () => clearTimeout(pressTimer));
         div.addEventListener('touchmove', () => clearTimeout(pressTimer));
 
@@ -974,16 +978,13 @@ async function renderProfile(uid) {
         gridAll.appendChild(div);
     });
 
-    // ==========================================
-    // INÍCIO DA PARTE 3.2 (HALL DA FAMA E CADEADO)
-    // ==========================================
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
     let bestMovie = null; let bestScore = -1;
 
     const listShared = document.getElementById('shared-movies-list'); listShared.innerHTML = '';
     let sharedCount = 0;
-    
+
     if (partner) {
         const myIds = myHistory.map(x => x.movie_id);
         const shared = partnerHistory.filter(x => myIds.includes(x.movie_id));
@@ -996,13 +997,11 @@ async function renderProfile(uid) {
             const paNoteObj = partnerHistory.find(x => x.movie_id === m.id);
             const myNote = myNoteObj?.rating;
             const paNote = paNoteObj?.rating;
-            
-            // LÓGICA DA AVALIAÇÃO CEGA (ANTI-INFLUÊNCIA)
-            let myDisplay = myNote ? `⭐ ${myNote}` : 'Pendente';
-            let paDisplay = paNote ? `⭐ ${paNote}` : 'Pendente';
 
-            // Se eu NÃO avaliei, mas ela JÁ avaliou, oculta a nota dela com o cadeado pra mim!
-            if (!myNote && paNote) {
+            let myDisplay = myNote && myNote > 0 ? `⭐ ${myNote}` : (myNote === -1 ? 'Dormiu 😴' : 'Pendente');
+            let paDisplay = paNote && paNote > 0 ? `⭐ ${paNote}` : (paNote === -1 ? 'Dormiu 😴' : 'Pendente');
+
+            if (myNote === null && paNote > 0) {
                 paDisplay = '<span class="blind-lock">🔒 Oculto</span>';
             }
 
@@ -1010,8 +1009,7 @@ async function renderProfile(uid) {
             div.innerHTML = `<img src="${m.poster_url}" class="shared-poster"><div style="flex:1;"><h4 style="font-family: var(--font-title);">${m.title}</h4><div class="shared-notes"><div><small>Você</small><b>${myDisplay}</b></div><div><small>${paName}</small><b>${paDisplay}</b></div></div></div>`;
             listShared.appendChild(div);
 
-            // CÁLCULO DO HALL DA FAMA
-            if (myNote && paNote) {
+            if (myNote > 0 && paNote > 0) {
                 const watchDate = new Date(myNoteObj.watched_at);
                 if (watchDate.getMonth() === currentMonth && watchDate.getFullYear() === currentYear) {
                     const sum = parseFloat(myNote) + parseFloat(paNote);
@@ -1021,22 +1019,19 @@ async function renderProfile(uid) {
         });
     }
 
-    // EXIBE O HALL DA FAMA NO TOPO DA REDE
     const hallEl = document.getElementById('hall-da-fama');
     if (bestMovie) {
-        if(hallEl) hallEl.classList.remove('hidden');
+        if (hallEl) hallEl.classList.remove('hidden');
         document.getElementById('hall-title').innerText = bestMovie.title;
         document.getElementById('hall-notas').innerText = `Soma das notas: ⭐ ${bestScore.toFixed(1)} / 20`;
         document.getElementById('hall-poster').src = bestMovie.poster_url;
-    } else { 
-        if(hallEl) hallEl.classList.add('hidden'); 
+    } else {
+        if (hallEl) hallEl.classList.add('hidden');
     }
 
-    // TELA VAZIA SE NÃO TIVER FILMES EM COMUM
-    if(sharedCount === 0) document.getElementById('shared-empty').classList.remove('hidden');
+    if (sharedCount === 0) document.getElementById('shared-empty').classList.remove('hidden');
     else document.getElementById('shared-empty').classList.add('hidden');
-    
-    // TILT 3D NAS CAPAS DA GRID
+
     VanillaTilt.init(document.querySelectorAll(".movie-card"), { max: 15, speed: 400 });
 }
 
@@ -1053,7 +1048,7 @@ document.querySelectorAll('.sub-btn').forEach(btn => {
 async function syncMovieWithDB(m) {
     const { data } = await supabaseClient.from('movies').select('*').eq('tmdb_id', m.id).single();
     if (data) return data;
-    const genreMap = { 28:"Ação", 35:"Comédia", 10749:"Romance", 27:"Terror", 18:"Drama", 878:"Ficção", 16:"Animação", 9648:"Mistério" };
+    const genreMap = { 28: "Ação", 35: "Comédia", 10749: "Romance", 27: "Terror", 18: "Drama", 878: "Ficção", 16: "Animação", 9648: "Mistério" };
     const { data: n } = await supabaseClient.from('movies').insert({ tmdb_id: m.id, title: m.title, poster_url: `https://image.tmdb.org/t/p/w500${m.poster_path}`, genre: (m.genre_ids ? genreMap[m.genre_ids[0]] || "Variado" : "Variado") }).select().single();
     return n;
 }
@@ -1067,7 +1062,7 @@ function setupNavigation() {
             btn.classList.add('active');
             const target = btn.getAttribute('data-target');
             const targetEl = document.getElementById(target);
-            targetEl.classList.add('active'); targetEl.classList.remove('hidden'); 
+            targetEl.classList.add('active'); targetEl.classList.remove('hidden');
             if (target === 'network-section') renderProfile(document.getElementById('tab-me').classList.contains('active') ? currentUser.id : partner?.id);
         };
     });
