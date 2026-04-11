@@ -128,7 +128,7 @@ function updateGlobalUI() {
         safeSetText('home-stat-juntos', sharedMovies.length);
     }
 
-    // Ignora as notas -1 (Dormiu) na matemática
+    // Filtra apenas notas reais para as estatísticas
     const sharedMyNotes = myHistory.filter(h => sharedMovies.find(s => s.movie_id === h.movie_id && h.rating !== null && h.rating > 0));
     const sharedPartnerNotes = partnerHistory.filter(h => sharedMovies.find(s => s.movie_id === h.movie_id && h.rating !== null && h.rating > 0));
 
@@ -136,7 +136,6 @@ function updateGlobalUI() {
         const sumMe = sharedMyNotes.reduce((acc, h) => acc + parseFloat(h.rating), 0);
         const sumPartner = sharedPartnerNotes.reduce((acc, h) => acc + parseFloat(h.rating), 0);
         const totalRatings = sharedMyNotes.length + sharedPartnerNotes.length;
-        
         safeSetText('home-stat-media', ((sumMe + sumPartner) / totalRatings).toFixed(1));
 
         const genres = sharedMyNotes.map(h => h.movies.genre).filter(g => g && g !== "Variado");
@@ -147,99 +146,57 @@ function updateGlobalUI() {
         
         let critName = "-", critMedia = "-", critImg = "assets/img/sem-capa.png";
         if (mediaMe < mediaPa) { critName = myName; critMedia = mediaMe.toFixed(1); critImg = me?.avatar_url; } 
-        else if (mediaPa < mediaMe) { critName = partnerName; critMedia = mediaPa.toFixed(1); critImg = mediaPa.toFixed(1); } 
+        else if (mediaPa < mediaMe) { critName = partnerName; critMedia = mediaPa.toFixed(1); critImg = partner?.avatar_url; } 
         else { critName = "Empate"; critMedia = mediaMe.toFixed(1); }
         safeSetText('crit-name', critName); safeSetText('crit-media', `Média: ${critMedia}`); safeSetSrc('crit-avatar', critImg || 'assets/img/sem-capa.png');
-
-        let maxDiff = -1; let tretaMovie = null; let notasTreta = "";
-        sharedMovies.forEach(s => {
-            const mN = sharedMyNotes.find(x => x.movie_id === s.movie_id)?.rating;
-            const pN = sharedPartnerNotes.find(x => x.movie_id === s.movie_id)?.rating;
-            if (mN && pN) {
-                const diff = Math.abs(mN - pN);
-                if (diff > maxDiff) { 
-                    maxDiff = diff; tretaMovie = s.movies.title; 
-                    notasTreta = `Você: ⭐${mN} | ${partnerName}: ⭐${pN}`; 
-                }
-            }
-        });
-
-        const boxTreta = document.getElementById('treta-container');
-        if (boxTreta) {
-            boxTreta.style.background = maxDiff >= 3 ? 'rgba(255, 59, 48, 0.1)' : (maxDiff > 1 ? 'rgba(255, 159, 10, 0.1)' : 'rgba(52, 199, 89, 0.1)');
-            boxTreta.style.borderColor = maxDiff >= 3 ? 'rgba(255, 59, 48, 0.3)' : (maxDiff > 1 ? 'rgba(255, 159, 10, 0.3)' : 'rgba(52, 199, 89, 0.3)');
-            safeSetText('treta-emoji', maxDiff >= 3 ? '🥊' : (maxDiff > 1 ? '⚠️' : '🕊️'));
-            safeSetText('treta-label', maxDiff >= 3 ? 'Guerra Mundial' : (maxDiff > 1 ? 'Divergência' : 'Sintonia'));
-            
-            if (maxDiff > 1.0) { safeSetText('treta-movie', tretaMovie); safeSetText('treta-notas', notasTreta); } 
-            else { safeSetText('treta-movie', "Paz e Amor"); safeSetText('treta-notas', "Sintonia perfeita nas notas!"); }
-        }
-
-        let totalDiff = 0; let countDiff = 0;
-        sharedMovies.forEach(s => {
-            const mN = sharedMyNotes.find(x => x.movie_id === s.movie_id)?.rating;
-            const pN = sharedPartnerNotes.find(x => x.movie_id === s.movie_id)?.rating;
-            if(mN && pN) { totalDiff += Math.abs(mN - pN); countDiff++; }
-        });
-        if(countDiff > 0) {
-            const avgDiff = totalDiff / countDiff;
-            const syncPerc = Math.max(0, Math.min(100, Math.round(100 - (avgDiff / 9 * 100))));
-            const syncFill = document.getElementById('sync-fill');
-            if(syncFill) syncFill.style.width = `${syncPerc}%`;
-            let syncMsg = "";
-            if(syncPerc > 85) syncMsg = `${syncPerc}% - Almas Gêmeas 💖`;
-            else if (syncPerc > 60) syncMsg = `${syncPerc}% - Dão pro gasto 🍿`;
-            else syncMsg = `${syncPerc}% - Guerra no Sofá 🥊`;
-            safeSetText('sync-text', syncMsg);
-        }
-    } else {
-        safeSetText('home-stat-media', "0.0"); safeSetText('home-stat-genre', "-"); safeSetText('crit-name', "Ainda não");
     }
 
     // ==========================================
     // LÓGICA DA FILA (ORDEM DE PRIORIDADE)
     // ==========================================
-
-    // 1. Verificar nota pendente (já disse que viu, mas não deu a estrela)
-    const pendingRating = myHistory.find(h => h.rating === null);
-
-    // 2. Verificar sessão esquecida (Parceiro concluiu, mas você não disse se viu ou dormiu)
+    const pendingRating = myHistory.find(h => h.rating === null); 
     const myWatchedIds = myHistory.map(h => h.movie_id);
-    const forgottenSession = watchlist.find(w => 
-        partnerHistory.some(ph => ph.movie_id === w.movie_id) && 
-        !myWatchedIds.includes(w.movie_id)
-    );
+    
+    // Sessão que o parceiro já respondeu e eu ainda não
+    const forgottenSession = watchlist.find(w => partnerHistory.some(ph => ph.movie_id === w.movie_id) && !myWatchedIds.includes(w.movie_id));
+
+    // Para o radar se ele estiver rodando
+    if (window.partnerWaitTimer) clearInterval(window.partnerWaitTimer);
 
     if (pendingRating) {
-        // PRIORIDADE 1: Dar a nota do que já viu
         safeDisplay('ticket-btns', false); safeDisplay('btn-share-wa', false); safeDisplay('pending-rating-box', true);
         safeSetText('ticket-title', pendingRating.movies.title); safeSetSrc('ticket-poster', pendingRating.movies.poster_url); safeSetText('ticket-date', "Avaliação Pendente");
         pendingRatingId = pendingRating.id; currentTicketMovie = null;
     } 
     else if (forgottenSession) {
-        // PRIORIDADE 2: Finalizar sessões antigas que ficaram para trás
-        currentTicketMovie = forgottenSession.movies; // Força o filme antigo no ticket para os botões funcionarem
+        currentTicketMovie = forgottenSession.movies; 
         safeSetText('ticket-title', currentTicketMovie.title); safeSetSrc('ticket-poster', currentTicketMovie.poster_url);
-        safeSetText('ticket-date', "Sessão Pendente (Finalize esta primeiro)");
-        
+        safeSetText('ticket-date', "Sessão Pendente (Responda esta primeiro)");
         safeDisplay('ticket-btns', true); safeDisplay('pending-rating-box', false);
-        safeDisplay('btn-choose-movie', false);
-        safeDisplay('btn-concluir-sessao', true);
-        safeDisplay('btn-cancel-sessao', false);
-        safeDisplay('btn-share-wa', false);
+        safeDisplay('btn-choose-movie', false); safeDisplay('btn-concluir-sessao', true); safeDisplay('btn-cancel-sessao', false); safeDisplay('btn-share-wa', false);
         document.getElementById('dynamic-bg').style.backgroundImage = `url('${currentTicketMovie.poster_url}')`;
     }
     else {
-        // PRIORIDADE 3: Mostrar o ingresso atual ou permitir nova escolha
         safeDisplay('ticket-btns', true); safeDisplay('pending-rating-box', false); pendingRatingId = null;
         if (currentTicketMovie) {
+            // Checa direto no banco se já respondeu
             const meResponded = myHistory.find(h => h.movie_id === currentTicketMovie.id);
+            
             if (meResponded) {
                 safeSetText('ticket-title', "Ingresso Liberado");
                 safeSetSrc('ticket-poster', "assets/img/sem-capa.png");
-                safeSetText('ticket-date', `Você terminou! Aguardando ${partnerName}...`);
+                safeSetText('ticket-date', `Aguardando a resposta de ${partnerName}...`);
                 document.getElementById('dynamic-bg').style.backgroundImage = `url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba')`;
                 safeDisplay('btn-choose-movie', true); safeDisplay('btn-concluir-sessao', false); safeDisplay('btn-cancel-sessao', false); safeDisplay('btn-share-wa', false);
+                
+                // Radar: Checa se o outro respondeu
+                window.partnerWaitTimer = setInterval(async () => {
+                    const { data } = await supabaseClient.from('watchlist').select('id').eq('movie_id', currentTicketMovie.id);
+                    if (!data || data.length === 0) {
+                        clearInterval(window.partnerWaitTimer);
+                        loadData(); 
+                    }
+                }, 4000);
             } else {
                 safeSetText('ticket-title', currentTicketMovie.title); safeSetSrc('ticket-poster', currentTicketMovie.poster_url);
                 safeSetText('ticket-date', `Sessão de Hoje`);
@@ -425,13 +382,9 @@ function runTearAnimation(callback) {
 // === AÇÕES DO NOVO INGRESSO ===
 function setupTicketActions() {
     
-    // Botão Principal: Abre a pergunta "Como vamos escolher?"
     const btnChoose = document.getElementById('btn-choose-movie');
-    if (btnChoose) {
-        btnChoose.onclick = () => { haptic(); openModal('modal-choose-mode'); };
-    }
+    if (btnChoose) { btnChoose.onclick = () => { haptic(); openModal('modal-choose-mode'); }; }
 
-    // Opção 1: Sortear da Lista (Antiga Roleta)
     const btnModeRoleta = document.getElementById('btn-mode-roleta');
     if (btnModeRoleta) {
         btnModeRoleta.onclick = () => {
@@ -441,7 +394,6 @@ function setupTicketActions() {
             const finalItem = watchlist[Math.floor(Math.random() * watchlist.length)];
             const m = finalItem.movies;
 
-            // INICIA O MODO WALKOUT
             document.getElementById('modal-walkout').classList.remove('hidden');
             const inner = document.getElementById('walkout-card-inner');
             inner.classList.remove('flip');
@@ -456,24 +408,23 @@ function setupTicketActions() {
             document.getElementById('walkout-poster').src = m.poster_url;
             document.getElementById('walkout-title').innerText = m.title;
 
-            // Suspense Fase 1 (Gênero)
             setTimeout(() => { haptic(); document.getElementById('walkout-genre').classList.remove('hidden'); }, 1500);
-            // Suspense Fase 2 (Ano/Texto)
             setTimeout(() => { haptic(); document.getElementById('walkout-year').classList.remove('hidden'); }, 3000);
-            // Fase 3 (O Flip da Carta!)
             setTimeout(() => { 
-                haptic(); navigator.vibrate([100, 50, 100]); // Super vibração
+                haptic(); navigator.vibrate([100, 50, 100]);
                 inner.classList.add('flip'); 
                 document.getElementById('walkout-glow').style.background = '#007aff';
                 setTimeout(() => document.getElementById('walkout-title').classList.remove('hidden'), 500);
             }, 4500);
 
-            // Salva no banco e fecha
             setTimeout(async () => {
                 const prev = watchlist.find(w => w.scheduled_date !== null);
                 if(prev) await supabaseClient.from('watchlist').update({ scheduled_date: null }).eq('id', prev.id);
                 const today = new Date().toISOString().split('T')[0];
                 await supabaseClient.from('watchlist').update({ scheduled_date: today }).eq('id', finalItem.id);
+                
+                // NOVO: Limpa a memória de resposta ao sortear, pra tratar como sessão nova!
+                localStorage.removeItem('cinecasal_answered_' + finalItem.movies.id);
                 
                 document.getElementById('modal-walkout').classList.add('hidden');
                 loadData(); showToast("Filme Escolhido! 🍿");
@@ -481,7 +432,6 @@ function setupTicketActions() {
         };
     }
 
-    // Opção 2: Pesquisar Filme Agora
     const btnModeSearch = document.getElementById('btn-mode-search');
     if (btnModeSearch) {
         btnModeSearch.onclick = () => {
@@ -490,7 +440,6 @@ function setupTicketActions() {
         };
     }
 
-    // Motor de Busca Específico do Ingresso
     const tInput = document.getElementById('ticket-search-input');
     const tFlyout = document.getElementById('ticket-search-results');
     let tTimer;
@@ -512,24 +461,19 @@ function setupTicketActions() {
                     div.innerHTML = `<img src="${imgUrl}" class="res-img" style="width:40px;height:60px;"><div><h4 style="font-size:14px; margin-bottom:4px; font-family:var(--font-title);">${m.title}</h4><small style="opacity:0.6;">${m.release_date ? m.release_date.split('-')[0] : ''}</small></div>`;
                     
                     div.onclick = async () => {
-                        haptic(); tFlyout.classList.add('hidden'); tInput.value = ''; closeModals();
-                        showToast("Preparando sessão...");
-                        
+                        haptic(); tFlyout.classList.add('hidden'); tInput.value = ''; closeModals(); showToast("Preparando sessão...");
                         const movieDB = await syncMovieWithDB(m);
-                        
-                        // Limpa sessão anterior
                         const prev = watchlist.find(w => w.scheduled_date !== null);
                         if(prev) await supabaseClient.from('watchlist').update({ scheduled_date: null }).eq('id', prev.id);
                         
-                        // Joga o filme escolhido pro ingresso
                         let wItem = watchlist.find(w => w.movie_id === movieDB.id);
                         const today = new Date().toISOString().split('T')[0];
                         
-                        if (wItem) {
-                            await supabaseClient.from('watchlist').update({ scheduled_date: today }).eq('id', wItem.id);
-                        } else {
-                            await supabaseClient.from('watchlist').insert({ movie_id: movieDB.id, added_by: currentUser.id, scheduled_date: today });
-                        }
+                        if (wItem) await supabaseClient.from('watchlist').update({ scheduled_date: today }).eq('id', wItem.id);
+                        else await supabaseClient.from('watchlist').insert({ movie_id: movieDB.id, added_by: currentUser.id, scheduled_date: today });
+                        
+                        // NOVO: Limpa a memória de resposta ao pesquisar, pra tratar como sessão nova!
+                        localStorage.removeItem('cinecasal_answered_' + movieDB.id);
                         
                         loadData(); showToast("Filme pronto pra sessão! 🎬");
                     };
@@ -542,58 +486,45 @@ function setupTicketActions() {
     // Função para deletar o ingresso APENAS quando os dois responderem
     async function checkAndDeleteWatchlist(movieId) {
         if (!partner) return;
-        const { data: paEx } = await supabaseClient.from('watched').select('id').eq('user_id', partner.id).eq('movie_id', movieId).single();
-        if (paEx) {
-            // Se o parceiro já tem registro (assistiu ou dormiu), a sessão finalizou pra ambos!
+        const { data } = await supabaseClient.from('watched').select('id').eq('user_id', partner.id).eq('movie_id', movieId);
+        if (data && data.length > 0) {
             await supabaseClient.from('watchlist').delete().eq('movie_id', movieId);
         }
     }
 
-    // Botão de Concluir a Sessão (Abre o modal de status da sessão individual)
     const btnConcluir = document.getElementById('btn-concluir-sessao');
     if (btnConcluir) {
-        btnConcluir.onclick = () => {
-            haptic();
-            if (!currentTicketMovie) return showToast("Nenhum filme escolhido!");
-            openModal('modal-status-sessao');
-        };
+        btnConcluir.onclick = () => { haptic(); if (!currentTicketMovie) return showToast("Nenhum filme escolhido!"); openModal('modal-status-sessao'); };
     }
 
-    // Lógica para "Assisti tudo"
     const btnStatusViTudo = document.getElementById('btn-status-vi-tudo');
     if (btnStatusViTudo) {
         btnStatusViTudo.onclick = async () => {
             haptic(); closeModals();
-            const { data: meEx } = await supabaseClient.from('watched').select('*').eq('user_id', currentUser.id).eq('movie_id', currentTicketMovie.id).single();
+            const { data } = await supabaseClient.from('watched').select('*').eq('user_id', currentUser.id).eq('movie_id', currentTicketMovie.id);
+            const meEx = data && data.length > 0 ? data[0] : null;
 
             const finalizar = async () => {
                 if (meEx && meEx.rating !== null && meEx.rating > 0) {
-                    // Já tem nota, pergunta se quer atualizar
                     setTimeout(() => {
                         document.getElementById('old-rating-display').innerText = `⭐ ${meEx.rating}`;
                         openModal('modal-update-rating');
                         
                         document.getElementById('btn-keep-rating').onclick = async () => { 
-                            haptic(); closeModals(); 
-                            await checkAndDeleteWatchlist(currentTicketMovie.id);
-                            currentTicketMovie = null; loadData(); 
+                            haptic(); closeModals(); await checkAndDeleteWatchlist(currentTicketMovie.id); currentTicketMovie = null; loadData(); 
                         };
                         document.getElementById('btn-change-rating').onclick = async () => {
-                            haptic(); closeModals();
-                            await supabaseClient.from('watched').update({ rating: null }).eq('id', meEx.id);
-                            await checkAndDeleteWatchlist(currentTicketMovie.id);
-                            currentTicketMovie = null; loadData();
+                            haptic(); closeModals(); await supabaseClient.from('watched').update({ rating: null }).eq('id', meEx.id);
+                            await checkAndDeleteWatchlist(currentTicketMovie.id); currentTicketMovie = null; loadData();
                         };
                     }, 500);
                 } else {
-                    // Nunca viu (ou tinha dormido antes) -> Vai para pendente
                     if (!meEx) {
                         await supabaseClient.from('watched').insert({ user_id: currentUser.id, movie_id: currentTicketMovie.id, rating: null });
-                    } else if (meEx.rating === -1) {
+                    } else if (meEx.rating === 0) { // <-- MUDOU AQUI PARA 0
                         await supabaseClient.from('watched').update({ rating: null }).eq('id', meEx.id);
                     }
-                    
-                    await checkAndDeleteWatchlist(currentTicketMovie.id);
+                    await checkAndDeleteWatchlist(currentTicketMovie.id); 
                     currentTicketMovie = null; loadData();
                 }
             };
@@ -601,16 +532,17 @@ function setupTicketActions() {
         };
     }
 
-    // Lógica para "Dormi no meio"
     const btnStatusDormi = document.getElementById('btn-status-dormi');
     if (btnStatusDormi) {
         btnStatusDormi.onclick = async () => {
             haptic(); closeModals();
             runTearAnimation(async () => {
-                // Insere com nota -1 (código secreto para "Dormiu", ignora pedir nota)
-                const { data: meEx } = await supabaseClient.from('watched').select('id').eq('user_id', currentUser.id).eq('movie_id', currentTicketMovie.id).single();
+                const { data } = await supabaseClient.from('watched').select('id').eq('user_id', currentUser.id).eq('movie_id', currentTicketMovie.id);
+                const meEx = data && data.length > 0 ? data[0] : null;
+                
                 if (!meEx) {
-                    await supabaseClient.from('watched').insert({ user_id: currentUser.id, movie_id: currentTicketMovie.id, rating: -1 });
+                    // MUDOU AQUI PARA 0 (Em vez de -1)
+                    await supabaseClient.from('watched').insert({ user_id: currentUser.id, movie_id: currentTicketMovie.id, rating: 0 });
                 }
                 
                 await checkAndDeleteWatchlist(currentTicketMovie.id);
@@ -620,20 +552,15 @@ function setupTicketActions() {
         };
     }
 
-    // Botão de Cancelar a Escolha
     const btnCancel = document.getElementById('btn-cancel-sessao');
     if (btnCancel) {
         btnCancel.onclick = async () => {
             haptic();
             const prev = watchlist.find(w => w.scheduled_date !== null);
-            if(prev) {
-                await supabaseClient.from('watchlist').update({ scheduled_date: null }).eq('id', prev.id);
-                loadData(); showToast("Sessão cancelada.");
-            }
+            if(prev) { await supabaseClient.from('watchlist').update({ scheduled_date: null }).eq('id', prev.id); loadData(); showToast("Sessão cancelada."); }
         };
     }
 
-    // Lógica das Notas (Intocada)
     const btnOpenRating = document.getElementById('btn-open-rating');
     if (btnOpenRating) {
         btnOpenRating.onclick = () => {
@@ -641,7 +568,7 @@ function setupTicketActions() {
             let p = myHistory.find(h => h.id === pendingRatingId);
             if (!p) p = myHistory.find(h => h.rating === null);
             if (p) { pendingRatingId = p.id; document.getElementById('rating-movie-title').innerText = p.movies.title; openModal('modal-rating'); } 
-            else { showToast("Erro: Nenhum filme pendente."); }
+            else showToast("Erro: Nenhum filme pendente.");
         };
     }
 
@@ -651,12 +578,7 @@ function setupTicketActions() {
             haptic();
             const nota = parseFloat(document.getElementById('input-rating').value);
             if (isNaN(nota) || nota < 1 || nota > 10) return showToast("A nota deve ser de 1 a 10!");
-            
-            // MAGIA: EXPLOSÃO DE CONFETES SE A NOTA FOR 10
-            if (nota === 10) {
-                haptic(); navigator.vibrate([100, 50, 200]);
-                confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 }, colors: ['#FFD700', '#FFA500', '#FFF'] });
-            }
+            if (nota === 10) { haptic(); navigator.vibrate([100, 50, 200]); confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 }, colors: ['#FFD700', '#FFA500', '#FFF'] }); }
             
             const originalText = btnSaveRating.innerText; btnSaveRating.innerText = "Salvando no banco..."; btnSaveRating.disabled = true;
             const { error } = await supabaseClient.from('watched').update({ rating: nota }).eq('id', pendingRatingId);
@@ -909,7 +831,7 @@ async function renderProfile(uid) {
     else document.getElementById('btn-edit-trigger').classList.add('hidden');
 
     const hist = isMe ? myHistory : partnerHistory;
-    // Pega só notas válidas (ignora null e -1)
+    // Pega só notas válidas (ignora null e 0)
     const rated = hist.filter(h => h.rating !== null && h.rating > 0);
 
     document.getElementById('stat-vistos').innerText = rated.length;
@@ -954,8 +876,8 @@ async function renderProfile(uid) {
 
         div.onclick = () => openMovieDetails(h.movies.tmdb_id);
 
-        // Exibe "Dormiu" ou a Nota
-        const notaText = h.rating && h.rating > 0 ? `⭐ ${h.rating}` : (h.rating === -1 ? `<span style="color:#8e8e93">Dormiu 😴</span>` : `<span style="color:#ff9f0a">Pendente</span>`);
+        // ATUALIZADO: Exibe "Dormiu" se a nota for 0
+        const notaText = h.rating && h.rating > 0 ? `⭐ ${h.rating}` : (h.rating === 0 ? `<span style="color:#8e8e93">Dormiu 😴</span>` : `<span style="color:#ff9f0a">Pendente</span>`);
         div.innerHTML = `<img src="${h.movies.poster_url}" class="h-poster"><div><h4 style="font-size:14px; margin-bottom:5px; font-family: var(--font-title);">${h.movies.title}</h4><span style="font-size:12px; opacity:0.6;">Nota: ${notaText}</span></div>`;
         tl.appendChild(div);
     });
@@ -1006,8 +928,9 @@ async function renderProfile(uid) {
             const myNote = myNoteObj?.rating;
             const paNote = paNoteObj?.rating;
 
-            let myDisplay = myNote && myNote > 0 ? `⭐ ${myNote}` : (myNote === -1 ? 'Dormiu 😴' : 'Pendente');
-            let paDisplay = paNote && paNote > 0 ? `⭐ ${paNote}` : (paNote === -1 ? 'Dormiu 😴' : 'Pendente');
+            // ATUALIZADO: Exibe "Dormiu" se a nota for 0
+            let myDisplay = myNote && myNote > 0 ? `⭐ ${myNote}` : (myNote === 0 ? 'Dormiu 😴' : 'Pendente');
+            let paDisplay = paNote && paNote > 0 ? `⭐ ${paNote}` : (paNote === 0 ? 'Dormiu 😴' : 'Pendente');
 
             if (myNote === null && paNote > 0) {
                 paDisplay = '<span class="blind-lock">🔒 Oculto</span>';
