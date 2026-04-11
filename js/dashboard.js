@@ -128,8 +128,9 @@ function updateGlobalUI() {
         safeSetText('home-stat-juntos', sharedMovies.length);
     }
 
-    const sharedMyNotes = myHistory.filter(h => sharedMovies.find(s => s.movie_id === h.movie_id && h.rating !== null));
-    const sharedPartnerNotes = partnerHistory.filter(h => sharedMovies.find(s => s.movie_id === h.movie_id && h.rating !== null));
+    // Ignora as notas -1 (Dormiu) na matemática
+    const sharedMyNotes = myHistory.filter(h => sharedMovies.find(s => s.movie_id === h.movie_id && h.rating !== null && h.rating > 0));
+    const sharedPartnerNotes = partnerHistory.filter(h => sharedMovies.find(s => s.movie_id === h.movie_id && h.rating !== null && h.rating > 0));
 
     if (sharedMyNotes.length > 0) {
         const sumMe = sharedMyNotes.reduce((acc, h) => acc + parseFloat(h.rating), 0);
@@ -146,11 +147,10 @@ function updateGlobalUI() {
         
         let critName = "-", critMedia = "-", critImg = "assets/img/sem-capa.png";
         if (mediaMe < mediaPa) { critName = myName; critMedia = mediaMe.toFixed(1); critImg = me?.avatar_url; } 
-        else if (mediaPa < mediaMe) { critName = partnerName; critMedia = mediaPa.toFixed(1); critImg = partner?.avatar_url; } 
+        else if (mediaPa < mediaMe) { critName = partnerName; critMedia = mediaPa.toFixed(1); critImg = mediaPa.toFixed(1); } 
         else { critName = "Empate"; critMedia = mediaMe.toFixed(1); }
         safeSetText('crit-name', critName); safeSetText('crit-media', `Média: ${critMedia}`); safeSetSrc('crit-avatar', critImg || 'assets/img/sem-capa.png');
 
-        // TRETA (Base 10)
         let maxDiff = -1; let tretaMovie = null; let notasTreta = "";
         sharedMovies.forEach(s => {
             const mN = sharedMyNotes.find(x => x.movie_id === s.movie_id)?.rating;
@@ -158,8 +158,7 @@ function updateGlobalUI() {
             if (mN && pN) {
                 const diff = Math.abs(mN - pN);
                 if (diff > maxDiff) { 
-                    maxDiff = diff; 
-                    tretaMovie = s.movies.title; 
+                    maxDiff = diff; tretaMovie = s.movies.title; 
                     notasTreta = `Você: ⭐${mN} | ${partnerName}: ⭐${pN}`; 
                 }
             }
@@ -176,7 +175,6 @@ function updateGlobalUI() {
             else { safeSetText('treta-movie', "Paz e Amor"); safeSetText('treta-notas', "Sintonia perfeita nas notas!"); }
         }
 
-        // SINCRONIA (Base 10)
         let totalDiff = 0; let countDiff = 0;
         sharedMovies.forEach(s => {
             const mN = sharedMyNotes.find(x => x.movie_id === s.movie_id)?.rating;
@@ -185,7 +183,7 @@ function updateGlobalUI() {
         });
         if(countDiff > 0) {
             const avgDiff = totalDiff / countDiff;
-            const syncPerc = Math.max(0, Math.min(100, Math.round(100 - (avgDiff / 9 * 100)))); 
+            const syncPerc = Math.max(0, Math.min(100, Math.round(100 - (avgDiff / 9 * 100))));
             const syncFill = document.getElementById('sync-fill');
             if(syncFill) syncFill.style.width = `${syncPerc}%`;
             let syncMsg = "";
@@ -198,52 +196,62 @@ function updateGlobalUI() {
         safeSetText('home-stat-media', "0.0"); safeSetText('home-stat-genre', "-"); safeSetText('crit-name', "Ainda não");
     }
 
-    const pending = myHistory.find(h => h.rating === null);
-    if (pending) {
+    // ==========================================
+    // LÓGICA DA FILA (ORDEM DE PRIORIDADE)
+    // ==========================================
+
+    // 1. Verificar nota pendente (já disse que viu, mas não deu a estrela)
+    const pendingRating = myHistory.find(h => h.rating === null);
+
+    // 2. Verificar sessão esquecida (Parceiro concluiu, mas você não disse se viu ou dormiu)
+    const myWatchedIds = myHistory.map(h => h.movie_id);
+    const forgottenSession = watchlist.find(w => 
+        partnerHistory.some(ph => ph.movie_id === w.movie_id) && 
+        !myWatchedIds.includes(w.movie_id)
+    );
+
+    if (pendingRating) {
+        // PRIORIDADE 1: Dar a nota do que já viu
         safeDisplay('ticket-btns', false); safeDisplay('btn-share-wa', false); safeDisplay('pending-rating-box', true);
-        safeSetText('ticket-title', pending.movies.title); safeSetSrc('ticket-poster', pending.movies.poster_url); safeSetText('ticket-date', "Avaliação Pendente");
-        pendingRatingId = pending.id; currentTicketMovie = null;
-    } else {
+        safeSetText('ticket-title', pendingRating.movies.title); safeSetSrc('ticket-poster', pendingRating.movies.poster_url); safeSetText('ticket-date', "Avaliação Pendente");
+        pendingRatingId = pendingRating.id; currentTicketMovie = null;
+    } 
+    else if (forgottenSession) {
+        // PRIORIDADE 2: Finalizar sessões antigas que ficaram para trás
+        currentTicketMovie = forgottenSession.movies; // Força o filme antigo no ticket para os botões funcionarem
+        safeSetText('ticket-title', currentTicketMovie.title); safeSetSrc('ticket-poster', currentTicketMovie.poster_url);
+        safeSetText('ticket-date', "Sessão Pendente (Finalize esta primeiro)");
+        
+        safeDisplay('ticket-btns', true); safeDisplay('pending-rating-box', false);
+        safeDisplay('btn-choose-movie', false);
+        safeDisplay('btn-concluir-sessao', true);
+        safeDisplay('btn-cancel-sessao', false);
+        safeDisplay('btn-share-wa', false);
+        document.getElementById('dynamic-bg').style.backgroundImage = `url('${currentTicketMovie.poster_url}')`;
+    }
+    else {
+        // PRIORIDADE 3: Mostrar o ingresso atual ou permitir nova escolha
         safeDisplay('ticket-btns', true); safeDisplay('pending-rating-box', false); pendingRatingId = null;
         if (currentTicketMovie) {
-            // Verifica se a pessoa já respondeu a sessão atual
             const meResponded = myHistory.find(h => h.movie_id === currentTicketMovie.id);
             if (meResponded) {
-                // SE JÁ RESPONDEU: Destrava a tela completamente!
                 safeSetText('ticket-title', "Ingresso Liberado");
                 safeSetSrc('ticket-poster', "assets/img/sem-capa.png");
-                safeSetText('ticket-date', `Você terminou! Aguardando a nota de ${partnerName}...`);
+                safeSetText('ticket-date', `Você terminou! Aguardando ${partnerName}...`);
                 document.getElementById('dynamic-bg').style.backgroundImage = `url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba')`;
-                
-                // Restaura o botão de Escolher Filme
-                safeDisplay('btn-choose-movie', true);
-                safeDisplay('btn-concluir-sessao', false);
-                safeDisplay('btn-cancel-sessao', false);
-                safeDisplay('btn-share-wa', false);
+                safeDisplay('btn-choose-movie', true); safeDisplay('btn-concluir-sessao', false); safeDisplay('btn-cancel-sessao', false); safeDisplay('btn-share-wa', false);
             } else {
-                // SE AINDA NÃO RESPONDEU: Mostra o ingresso normal
                 safeSetText('ticket-title', currentTicketMovie.title); safeSetSrc('ticket-poster', currentTicketMovie.poster_url);
                 safeSetText('ticket-date', `Sessão de Hoje`);
                 document.getElementById('dynamic-bg').style.backgroundImage = `url('${currentTicketMovie.poster_url}')`;
-                
-                safeDisplay('btn-choose-movie', false);
-                safeDisplay('btn-concluir-sessao', true);
-                safeDisplay('btn-cancel-sessao', true);
-                safeDisplay('btn-share-wa', true);
-                
+                safeDisplay('btn-choose-movie', false); safeDisplay('btn-concluir-sessao', true); safeDisplay('btn-cancel-sessao', true); safeDisplay('btn-share-wa', true);
                 const btnShare = document.getElementById('btn-share-wa');
-                if(btnShare) {
-                    btnShare.onclick = () => { haptic(); window.open(`https://wa.me/?text=${encodeURIComponent(`🍿 *Sessão CineCasal!*\n\nFilme marcado: *${currentTicketMovie.title}*\n\nPrepara a pipoca! ❤️`)}`, '_blank'); };
-                }
+                if(btnShare) btnShare.onclick = () => { haptic(); window.open(`https://wa.me/?text=${encodeURIComponent(`🍿 *Sessão CineCasal!*\n\nFilme marcado: *${currentTicketMovie.title}*\n\nPrepara a pipoca! ❤️`)}`, '_blank'); };
             }
         } else {
             safeSetText('ticket-title', "Nenhum filme escolhido"); safeSetSrc('ticket-poster', "assets/img/sem-capa.png"); safeSetText('ticket-date', "Toque abaixo para começar");
             document.getElementById('dynamic-bg').style.backgroundImage = `url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba')`;
-            
-            safeDisplay('btn-choose-movie', true);
-            safeDisplay('btn-concluir-sessao', false);
-            safeDisplay('btn-cancel-sessao', false);
-            safeDisplay('btn-share-wa', false);
+            safeDisplay('btn-choose-movie', true); safeDisplay('btn-concluir-sessao', false); safeDisplay('btn-cancel-sessao', false); safeDisplay('btn-share-wa', false);
         }
     }
 }
