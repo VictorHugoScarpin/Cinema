@@ -1,0 +1,16 @@
+{
+  "name": "CineCasal Premium",
+  "short_name": "CineCasal",
+  "description": "Nosso catálogo de cinema privado.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "icons": [
+    {
+      "src": "assets/img/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
