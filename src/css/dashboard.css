@@ -5,8 +5,14 @@
     --font-title: 'Poppins', sans-serif;
     --font-body: 'Inter', sans-serif;
     --accent: #d4af6a;
+    --accent-rgb: 212, 175, 106;
     --accent-soft: rgba(212, 175, 106, 0.15);
-    --cr: 212; --cg: 175; --cb: 106;
+    /* Verde/vermelho/amarelo num tom que combina com o dourado do site, em vez das cores puras de sistema */
+    --good: #9caf6e;
+    --good-rgb: 156, 175, 110;
+    --bad: #c1666b;
+    --bad-rgb: 193, 102, 107;
+    --warn: #d6a95f;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
 body { background: #050505; color: #fff; overflow-x: hidden; font-family: var(--font-body); overscroll-behavior-y: none; }
@@ -55,7 +61,7 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 .critical-box, .treta-box { display: flex; align-items: center; padding: 12px 20px; border-radius: 16px; border: 1px solid var(--border); background: rgba(0,0,0,0.3); transition: 0.3s; }
 .crit-icon { width: 24px; height: 24px; }
 .crit-info { flex: 1; margin-left: 15px; }
-.crit-info small { font-size: 10px; color: gold; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+.crit-info small { font-size: 10px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
 .crit-info b { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; }
 
 /* BUSCA */
@@ -65,7 +71,7 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 .result-item { display: flex; gap: 15px; padding: 10px; border-radius: 12px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); }
 
 /* TICKET */
-.hero-ticket { display: flex; flex-direction: row; height: auto; margin-bottom: 30px; position: relative; overflow: visible; z-index: 10; border-radius: 20px; align-items: stretch; box-shadow: 0 20px 50px -15px rgba(var(--cr), var(--cg), var(--cb), 0.35); transition: box-shadow 1s ease; }
+.hero-ticket { display: flex; flex-direction: row; height: auto; margin-bottom: 30px; position: relative; overflow: visible; z-index: 10; border-radius: 20px; align-items: stretch; box-shadow: 0 20px 50px -15px rgba(var(--accent-rgb), 0.35); }
 
 /* Costura de ingresso: linha pontilhada + dois "furos" no rasgo */
 .ticket-seam { position: absolute; top: 0; bottom: 0; left: 40%; width: 0; z-index: 15; pointer-events: none; }
@@ -118,7 +124,7 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 
 /* REDE, PERFIL, TBT */
 .tbt-banner { background: linear-gradient(135deg, rgba(255, 159, 10, 0.2), rgba(255, 59, 48, 0.2)); border: 1px solid rgba(255, 159, 10, 0.4); padding: 15px 20px; border-radius: 20px; margin-bottom: 25px; text-align: center; }
-.tbt-banner h3 { font-size: 16px; color: gold; margin-bottom: 5px; }
+.tbt-banner h3 { font-size: 16px; color: var(--accent); margin-bottom: 5px; }
 .profile-nav { display: flex; padding: 6px; margin-bottom: 25px; border-radius: 20px; }
 .n-tab { flex: 1; background: none; border: none; padding: 12px; color: var(--text-sec); font-weight: 700; font-size: 13px; border-radius: 15px; transition: 0.3s; font-family: var(--font-title); }
 .n-tab.active { background: var(--accent-soft); color: var(--accent); }
@@ -131,7 +137,7 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 .sync-meter { padding: 20px; text-align: center; margin-bottom: 20px; border-radius: 20px; }
 .sync-meter h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-sec); margin-bottom: 10px; }
 .sync-bar { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
-.sync-fill { height: 100%; background: linear-gradient(90deg, #ff3b30, #ff9f0a, #34c759); width: 0%; transition: width 1s ease; }
+.sync-fill { height: 100%; background: linear-gradient(90deg, var(--bad), var(--warn), var(--good)); width: 0%; transition: width 1s ease; }
 
 .empty-state { text-align: center; padding: 40px 20px; color: var(--text-sec); animation: fadeInTab 0.5s ease; }
 .empty-emoji { width: 40px; height: 40px; margin: 0 auto 15px; opacity: 0.8; }
@@ -169,10 +175,8 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 /* TAB BAR COM SAFE AREA */
 .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; height: calc(75px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); display: flex; justify-content: space-around; align-items: center; z-index: 2000; border-radius: 35px 35px 0 0; border-bottom: none; }
 .t-item { flex: 1; background: none; border: none; color: var(--text-sec); font-weight: 700; font-size: 14px; transition: 0.3s; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; font-family: var(--font-title); }
-.t-item.active { color: var(--accent); color: rgb(var(--cr), var(--cg), var(--cb)); transform: translateY(-3px); }
+.t-item.active { color: var(--accent); transform: translateY(-3px); }
 .t-item { position: relative; }
-.t-item .t-dot { position: absolute; top: 2px; left: 50%; transform: translateX(-50%) scale(0); width: 5px; height: 5px; border-radius: 50%; background: rgb(var(--cr), var(--cg), var(--cb)); box-shadow: 0 0 8px rgb(var(--cr), var(--cg), var(--cb)); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.t-item.active .t-dot { transform: translateX(-50%) scale(1); }
 .t-item .t-icon { width: 19px; height: 19px; margin: 0 auto 2px; filter: grayscale(1); opacity: 0.6; transition: 0.3s; }
 .t-item.active .t-icon { filter: grayscale(0); opacity: 1; transform: scale(1.08); }
 .t-item .t-label { font-size: 10px; letter-spacing: 0.3px; }
@@ -222,16 +226,15 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 .dashboard-bg { transition: transform 0.1s ease-out, background-image 1s ease-in-out; will-change: transform; transform: scale(1.1); }
 
 /* MODAL CAMALEÃO (Efeito Neon) */
-:root { --chameleon-color: rgba(255,255,255,0.05); }
-.details-card { box-shadow: 0 -20px 60px var(--chameleon-color); transition: box-shadow 1s ease, transform 0.3s ease; }
-.btn-solid.highlight { background: var(--chameleon-color); box-shadow: 0 5px 15px var(--chameleon-color); transition: background 1s ease, box-shadow 1s ease; color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+.details-card { box-shadow: 0 -20px 60px rgba(var(--accent-rgb), 0.2); transition: transform 0.3s ease; }
+.btn-solid.highlight { background: var(--accent); box-shadow: 0 5px 15px rgba(var(--accent-rgb), 0.35); color: #1a1408; border: 1px solid rgba(255,255,255,0.2); }
 
 /* HALL DA FAMA */
 .hall-card { display: flex; align-items: center; gap: 15px; padding: 15px; border-radius: 20px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 140, 0, 0.2)); border: 1px solid rgba(255, 215, 0, 0.4); position: relative; overflow: hidden; }
 .hall-crown { position: absolute; top: -10px; right: 10px; width: 50px; height: 50px; opacity: 0.2; transform: rotate(15deg); }
 .hall-img { width: 60px; height: 90px; border-radius: 10px; object-fit: cover; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 1; }
 .hall-info { z-index: 1; }
-.hall-info h3 { font-size: 16px; color: gold; margin-bottom: 5px; }
+.hall-info h3 { font-size: 16px; color: var(--accent); margin-bottom: 5px; }
 .hall-info p { font-size: 12px; font-weight: bold; color: #fff; }
 
 /* AVALIAÇÃO CEGA (CADEADO) */
@@ -239,7 +242,7 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 
 /* ANIMAÇÃO WALKOUT (EA FC STYLE) */
 .walkout-container { perspective: 1000px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100%; position: relative; }
-.walkout-glow { position: absolute; width: 200px; height: 300px; background: gold; filter: blur(80px); opacity: 0; transition: opacity 1s ease; z-index: 1; }
+.walkout-glow { position: absolute; width: 200px; height: 300px; background: var(--accent); filter: blur(80px); opacity: 0; transition: opacity 1s ease; z-index: 1; }
 .walkout-card { width: 220px; height: 330px; z-index: 2; }
 .walkout-card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; }
 .walkout-card-inner.flip { transform: rotateY(180deg); }
@@ -248,15 +251,15 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 .walkout-mystery-logo { font-size: 80px; font-weight: 900; color: rgba(255,255,255,0.1); margin-bottom: 20px; }
 .walkout-stats { display: flex; flex-direction: column; gap: 15px; }
 .w-stat { font-size: 24px; font-weight: 800; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); animation: popIn 0.5s ease forwards; }
-.walkout-back { transform: rotateY(180deg); overflow: hidden; border: 2px solid gold; }
+.walkout-back { transform: rotateY(180deg); overflow: hidden; border: 2px solid var(--accent); }
 .walkout-back img { width: 100%; height: 100%; object-fit: cover; }
 .walkout-title { margin-top: 30px; font-size: 28px; color: #fff; text-shadow: 0 5px 15px rgba(0,0,0,0.8); z-index: 2; animation: popIn 0.5s ease forwards; text-align: center; padding: 0 20px; }
 @keyframes popIn { 0% { opacity: 0; transform: scale(0.5); } 100% { opacity: 1; transform: scale(1); } }
 
 /* ============ MODO DESCUBRA JUNTOS (TINDER) ============ */
-.tinder-cta { width: 100%; box-sizing: border-box; text-align: left; font: inherit; color: #fff; display: flex; align-items: center; gap: 14px; padding: 16px; margin-bottom: 20px; cursor: pointer; border: 1px solid rgba(var(--cr), var(--cg), var(--cb), 0.35); transition: transform 0.2s ease; }
+.tinder-cta { width: 100%; box-sizing: border-box; text-align: left; font: inherit; color: #fff; display: flex; align-items: center; gap: 14px; padding: 16px; margin-bottom: 20px; cursor: pointer; border: 1px solid rgba(var(--accent-rgb), 0.35); transition: transform 0.2s ease; }
 .tinder-cta:active { transform: scale(0.98); }
-.tinder-cta-icon { width: 26px; height: 26px; color: rgb(var(--cr), var(--cg), var(--cb)); }
+.tinder-cta-icon { width: 26px; height: 26px; color: var(--accent); }
 .tinder-cta-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .tinder-cta-text small { color: var(--text-sec); font-size: 12px; }
 .tinder-cta-arrow { font-size: 22px; color: var(--text-sec); }
@@ -279,8 +282,8 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 .tinder-card-info h3 { font-size: 19px; margin-bottom: 4px; }
 .tinder-card-info span { font-size: 12px; color: rgba(255,255,255,0.7); }
 .tinder-stamp { position: absolute; top: 30px; padding: 6px 14px; border: 4px solid; border-radius: 10px; font-family: var(--font-title); font-weight: 800; font-size: 24px; text-transform: uppercase; opacity: 0; transform: rotate(-20deg); }
-.tinder-stamp.like { left: 20px; color: #34c759; border-color: #34c759; }
-.tinder-stamp.nope { right: 20px; color: #ff453a; border-color: #ff453a; transform: rotate(20deg); }
+.tinder-stamp.like { left: 20px; color: var(--good); border-color: var(--good); }
+.tinder-stamp.nope { right: 20px; color: var(--bad); border-color: var(--bad); transform: rotate(20deg); }
 
 .tinder-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; color: var(--text-sec); }
 .tinder-empty.hidden { display: none; }
@@ -288,8 +291,8 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 .tinder-actions { display: flex; justify-content: center; align-items: center; gap: 24px; }
 .tinder-btn { width: 62px; height: 62px; border-radius: 50%; border: 1px solid var(--border); background: rgba(255,255,255,0.06); font-size: 24px; display: flex; align-items: center; justify-content: center; transition: transform 0.15s ease; }
 .tinder-btn:active { transform: scale(0.88); }
-.tinder-btn-no { color: #ff453a; }
-.tinder-btn-yes { width: 72px; height: 72px; font-size: 28px; color: #34c759; box-shadow: 0 0 25px rgba(52,199,89,0.35); }
+.tinder-btn-no { color: var(--bad); }
+.tinder-btn-yes { width: 72px; height: 72px; font-size: 28px; color: var(--good); box-shadow: 0 0 25px rgba(var(--good-rgb), 0.35); }
 .tinder-btn-info { width: 44px; height: 44px; font-size: 16px; }
 
 /* ============ WRAPPED MENSAL ============ */
@@ -305,7 +308,7 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 .wrapped-emoji { width: 32px; height: 32px; color: var(--accent); }
 
 /* Bolinha verde de presença online no avatar do parceiro */
-.av-sm.is-online { box-shadow: 0 0 0 2px #050505, 0 0 0 4px #34c759; }
+.av-sm.is-online { box-shadow: 0 0 0 2px #050505, 0 0 0 4px var(--good); }
 
 /* ============ ÍCONES SVG (substituem os emojis) ============ */
 .icon { display: inline-flex; align-items: center; justify-content: center; width: 1em; height: 1em; line-height: 0; }
@@ -321,3 +324,9 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 /* Padroniza qualquer par de botões lado a lado no mesmo tamanho */
 .modal-options { display: flex; gap: 10px; }
 .modal-options > button { flex: 1; min-width: 0; }
+
+/* Divisor de mês na Cronologia */
+.month-divider { display: flex; align-items: center; gap: 12px; margin: 22px 0 10px; }
+.month-divider:first-child { margin-top: 4px; }
+.month-divider span { font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; font-family: var(--font-title); white-space: nowrap; }
+.month-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }

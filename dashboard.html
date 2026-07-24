@@ -16,7 +16,6 @@
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -177,13 +176,13 @@
                 </div>
 
                 <div class="sub-nav-profile">
-                    <button class="sub-btn active" data-target="box-cronologia">Cronologia</button>
-                    <button class="sub-btn" data-target="box-assistidos">Todos</button>
+                    <button class="sub-btn active" data-target="box-assistidos">Todos</button>
+                    <button class="sub-btn" data-target="box-cronologia">Cronologia</button>
                     <button class="sub-btn" data-target="box-comum">Em Comum</button>
                 </div>
 
-                <div id="box-cronologia" class="prof-content active"><div class="history-list" id="history-timeline"></div></div>
-                <div id="box-assistidos" class="prof-content"><div class="movie-grid" id="all-watched-grid"></div></div>
+                <div id="box-assistidos" class="prof-content active"><div class="movie-grid" id="all-watched-grid"></div></div>
+                <div id="box-cronologia" class="prof-content"><div class="history-list" id="history-timeline"></div></div>
                 
                 <div id="box-comum" class="prof-content">
                     
@@ -217,9 +216,9 @@
         </main>
 
         <nav class="tab-bar glass-panel">
-            <button class="t-item active" data-target="agenda-section"><span class="t-dot"></span><span class="t-icon" data-icon="home"></span><span class="t-label">Home</span></button>
-            <button class="t-item" data-target="watchlist-section"><span class="t-dot"></span><span class="t-icon" data-icon="clapper"></span><span class="t-label">Lista</span></button>
-            <button class="t-item" data-target="network-section"><span class="t-dot"></span><span class="t-icon" data-icon="users"></span><span class="t-label">Rede</span></button>
+            <button class="t-item active" data-target="agenda-section"><span class="t-icon" data-icon="home"></span><span class="t-label">Home</span></button>
+            <button class="t-item" data-target="watchlist-section"><span class="t-icon" data-icon="clapper"></span><span class="t-label">Lista</span></button>
+            <button class="t-item" data-target="network-section"><span class="t-icon" data-icon="users"></span><span class="t-label">Rede</span></button>
         </nav>
     </div>
 
@@ -228,7 +227,7 @@
             <div class="sheet-pill drag-handle"></div>
             <h3>Remover da Lista?</h3>
             <p class="sub-text">Deseja apagar este filme?</p>
-            <button id="btn-confirm-delete" class="btn-solid mt-15" style="background: #ff453a; color: #fff;">Sim, Apagar</button>
+            <button id="btn-confirm-delete" class="btn-solid mt-15" style="background: var(--bad); color: #fff;">Sim, Apagar</button>
             <button onclick="closeModals()" class="btn-text cancel">Cancelar</button>
         </div>
     </div>
@@ -356,7 +355,7 @@
     <div class="bottom-sheet glass-panel swipeable-sheet">
         <div class="sheet-pill drag-handle"></div>
         <h3>Você já viu este filme!</h3>
-        <p class="sub-text">Sua nota anterior foi: <strong id="old-rating-display" style="color:gold; font-size: 18px;"><span class="icon" data-icon="star"></span> 0.0</strong></p>
+        <p class="sub-text">Sua nota anterior foi: <strong id="old-rating-display" style="color: var(--accent); font-size: 18px;"><span class="icon" data-icon="star"></span> 0.0</strong></p>
         <div class="modal-options mt-15">
             <button id="btn-keep-rating" class="btn-outline">Manter Nota</button>
             <button id="btn-change-rating" class="btn-solid highlight">Mudar Nota</button>

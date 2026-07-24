@@ -28,30 +28,6 @@ let deleteItemType = null; // NOVO: Guarda de onde estamos deletando ('watchlist
 
 const haptic = () => { if (navigator.vibrate) navigator.vibrate(40); };
 
-// Extrai a cor dominante do pôster em cartaz e usa pra "tingir" nav, ticket e glows
-function applyAmbientColor(imgUrl) {
-    if (!imgUrl) return;
-    const img = new Image();
-    img.crossOrigin = "Anonymous";
-    img.onload = () => {
-        try {
-            const colorThief = new ColorThief();
-            const [r, g, b] = colorThief.getColor(img);
-            document.documentElement.style.setProperty('--chameleon-color', `rgba(${r}, ${g}, ${b}, 0.8)`);
-            document.documentElement.style.setProperty('--cr', r);
-            document.documentElement.style.setProperty('--cg', g);
-            document.documentElement.style.setProperty('--cb', b);
-        } catch (e) { /* mantém a cor dourada padrão */ }
-    };
-    img.src = imgUrl;
-}
-function resetAmbientColor() {
-    document.documentElement.style.setProperty('--chameleon-color', `#d4af6a`);
-    document.documentElement.style.setProperty('--cr', 212);
-    document.documentElement.style.setProperty('--cg', 175);
-    document.documentElement.style.setProperty('--cb', 106);
-}
-
 
 
 // PARALLAX MÁGICO
@@ -275,7 +251,6 @@ function updateGlobalUI() {
         safeDisplay('ticket-btns', true); safeDisplay('pending-rating-box', false);
         safeDisplay('btn-choose-movie', false); safeDisplay('btn-concluir-sessao', true); safeDisplay('btn-cancel-sessao', false); safeDisplay('btn-share-wa', false);
         document.getElementById('dynamic-bg').style.backgroundImage = `url('${currentTicketMovie.poster_url}')`;
-        applyAmbientColor(currentTicketMovie.poster_url);
     }
     else {
         safeDisplay('ticket-btns', true); safeDisplay('pending-rating-box', false); pendingRatingId = null;
@@ -302,7 +277,6 @@ function updateGlobalUI() {
                 safeSetText('ticket-title', currentTicketMovie.title); safeSetSrc('ticket-poster', currentTicketMovie.poster_url);
                 safeSetText('ticket-date', `Sessão de Hoje`);
                 document.getElementById('dynamic-bg').style.backgroundImage = `url('${currentTicketMovie.poster_url}')`;
-                applyAmbientColor(currentTicketMovie.poster_url);
                 safeDisplay('btn-choose-movie', false); safeDisplay('btn-concluir-sessao', true); safeDisplay('btn-cancel-sessao', true); safeDisplay('btn-share-wa', true);
                 const btnShare = document.getElementById('btn-share-wa');
                 if(btnShare) btnShare.onclick = () => { haptic(); window.open(`https://wa.me/?text=${encodeURIComponent(`🎬 *Sessão CineCasal!*\n\nFilme marcado: *${currentTicketMovie.title}*\n\nPrepara a pipoca!`)}`, '_blank'); };
@@ -310,7 +284,6 @@ function updateGlobalUI() {
         } else {
             safeSetText('ticket-title', "Nenhum filme escolhido"); safeSetSrc('ticket-poster', "assets/img/sem-capa.png"); safeSetText('ticket-date', "Toque abaixo para começar");
             document.getElementById('dynamic-bg').style.backgroundImage = `url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba')`;
-            resetAmbientColor();
             safeDisplay('btn-choose-movie', true); safeDisplay('btn-concluir-sessao', false); safeDisplay('btn-cancel-sessao', false); safeDisplay('btn-share-wa', false);
         }
     }
@@ -782,16 +755,8 @@ async function openMovieDetails(tmdbId) {
         }, 300); // pequeno delay para suavidade
     } catch (e) { }
 
-    // CÓDIGO DO CAMALEÃO (EXTRAI A COR DO PÔSTER)
+    // Pôster do modal de detalhes (sem mais tingir os botões com a cor dele)
     const imgEl = document.getElementById('detail-poster');
-    imgEl.crossOrigin = "Anonymous";
-    imgEl.onload = () => {
-        try {
-            const colorThief = new ColorThief();
-            const color = colorThief.getColor(imgEl);
-            document.documentElement.style.setProperty('--chameleon-color', `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.8)`);
-        } catch (e) { document.documentElement.style.setProperty('--chameleon-color', `#007aff`); }
-    };
     imgEl.src = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'assets/img/sem-capa.png';
 
     // ONDE ASSISTIR + DEEP LINKS MÁGICOS
@@ -977,7 +942,18 @@ async function renderProfile(uid) {
     } else document.getElementById('genreRadarChart').style.display = 'none';
 
     const tl = document.getElementById('history-timeline'); tl.innerHTML = '';
+    const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    let lastMonthKey = null;
     hist.forEach(h => {
+        const d = new Date(h.watched_at);
+        const monthKey = `${d.getFullYear()}-${d.getMonth()}`;
+        if (monthKey !== lastMonthKey) {
+            lastMonthKey = monthKey;
+            const divider = document.createElement('div');
+            divider.className = 'month-divider';
+            divider.innerHTML = `<span>${monthNames[d.getMonth()]} ${d.getFullYear()}</span>`;
+            tl.appendChild(divider);
+        }
         const div = document.createElement('div'); div.className = 'h-item'; div.setAttribute('data-bg', h.movies.poster_url);
 
         let pressTimer;
@@ -997,7 +973,7 @@ async function renderProfile(uid) {
         div.onclick = () => openMovieDetails(h.movies.tmdb_id);
 
         // ATUALIZADO: Exibe "Dormiu" se a nota for 0
-        const notaText = h.rating && h.rating > 0 ? `${iconInline("star")} ${h.rating}` : (h.rating === 0 ? `<span style="color:#8e8e93">${iconInline("moon")} Dormiu</span>` : `<span style="color:#ff9f0a">Pendente</span>`);
+        const notaText = h.rating && h.rating > 0 ? `${iconInline("star")} ${h.rating}` : (h.rating === 0 ? `<span style="color:#8e8e93">${iconInline("moon")} Dormiu</span>` : `<span style="color:var(--warn)">Pendente</span>`);
 
         const daysSince = (Date.now() - new Date(h.watched_at).getTime()) / (1000 * 60 * 60 * 24);
         const canEdit = isMe && daysSince <= 5;
@@ -1418,7 +1394,7 @@ function openWrappedModal() {
         if (worst && worstDiff > 0) {
             document.getElementById('wr-treta-card').classList.remove('hidden');
             document.getElementById('wr-treta-title').innerText = worst.title;
-            document.getElementById('wr-treta-notas').innerText = worstNotes;
+            document.getElementById('wr-treta-notas').innerHTML = worstNotes;
         } else {
             document.getElementById('wr-treta-card').classList.add('hidden');
         }
