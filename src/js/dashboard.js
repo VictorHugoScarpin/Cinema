@@ -346,6 +346,8 @@ function setupGlobalModals() {
     // Fechar todas as gavetas (e limpar o rastro do arraste)
     window.closeModals = () => {
         haptic();
+        const trailerWrap = document.getElementById('trailer-embed-wrap');
+        if (trailerWrap) { trailerWrap.innerHTML = ''; trailerWrap.classList.add('hidden'); }
         document.querySelectorAll('.swipeable-sheet').forEach(sheet => {
             sheet.classList.remove('open');
             setTimeout(() => {
@@ -722,9 +724,17 @@ async function openMovieDetails(tmdbId) {
     document.getElementById('detail-skeleton').classList.remove('hidden');
     document.getElementById('detail-content').classList.add('hidden');
 
+    // Reseta o estado do trailer de uma abertura anterior
+    const trailerBtn = document.getElementById('btn-play-trailer');
+    const trailerWrap = document.getElementById('trailer-embed-wrap');
+    trailerBtn.classList.add('hidden');
+    trailerWrap.classList.add('hidden');
+    trailerWrap.innerHTML = '';
+
+    let movie = null;
     try {
-        const res = await tmdbFetch(`movie/${tmdbId}`, { language: 'pt-BR', append_to_response: 'credits' });
-        const movie = await res.json();
+        const res = await tmdbFetch(`movie/${tmdbId}`, { language: 'pt-BR', append_to_response: 'credits,videos' });
+        movie = await res.json();
 
         document.getElementById('detail-poster').src = movie.backdrop_path ? `https://image.tmdb.org/t/p/w500${movie.backdrop_path}` : (movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'assets/img/sem-capa.png');
         document.getElementById('detail-title').innerText = movie.title;
@@ -737,15 +747,14 @@ async function openMovieDetails(tmdbId) {
         document.getElementById('detail-cast').innerText = cast ? cast + '...' : 'Desconhecido';
         document.getElementById('detail-overview').innerText = movie.overview || 'Sem sinopse disponível.';
 
-        const streamBox = document.getElementById('streaming-box');
-        const streamIcons = document.getElementById('streaming-icons');
-        streamBox.classList.add('hidden'); streamIcons.innerHTML = '';
-        const provRes = await tmdbFetch(`movie/${tmdbId}/watch/providers`);
-        const provData = await provRes.json();
-        const brProviders = provData.results?.BR?.flatrate;
-        if (brProviders && brProviders.length > 0) {
-            streamBox.classList.remove('hidden');
-            brProviders.forEach(p => { streamIcons.innerHTML += `<img src="https://image.tmdb.org/t/p/w92${p.logo_path}" class="prov-icon">`; });
+        // Trailer: prioriza trailer oficial em português, depois qualquer trailer, depois teaser
+        const videos = movie.videos?.results || [];
+        const trailer = videos.find(v => v.site === 'YouTube' && v.type === 'Trailer' && v.official)
+            || videos.find(v => v.site === 'YouTube' && v.type === 'Trailer')
+            || videos.find(v => v.site === 'YouTube' && v.type === 'Teaser');
+        if (trailer) {
+            trailerBtn.classList.remove('hidden');
+            trailerBtn.onclick = () => playTrailer(trailer.key);
         }
 
         // Esconde Skeleton, mostra conteúdo
@@ -755,31 +764,36 @@ async function openMovieDetails(tmdbId) {
         }, 300); // pequeno delay para suavidade
     } catch (e) { }
 
-    // Pôster do modal de detalhes (sem mais tingir os botões com a cor dele)
-    const imgEl = document.getElementById('detail-poster');
-    imgEl.src = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'assets/img/sem-capa.png';
-
     // ONDE ASSISTIR + DEEP LINKS MÁGICOS
     const streamBox = document.getElementById('streaming-box');
     const streamIcons = document.getElementById('streaming-icons');
     streamBox.classList.add('hidden'); streamIcons.innerHTML = '';
-    const provRes = await tmdbFetch(`movie/${tmdbId}/watch/providers`);
-    const provData = await provRes.json();
-    const brProviders = provData.results?.BR?.flatrate;
+    try {
+        const provRes = await tmdbFetch(`movie/${tmdbId}/watch/providers`);
+        const provData = await provRes.json();
+        const brProviders = provData.results?.BR?.flatrate;
 
-    if (brProviders && brProviders.length > 0) {
-        streamBox.classList.remove('hidden');
-        brProviders.forEach(p => {
-            // Esquema de Deep Links para abrir direto nos Apps (Netflix, Prime, Disney)
-            let link = provData.results.BR.link; // Link padrão do JustWatch
-            if (p.provider_id === 8) link = `nflx://`;
-            if (p.provider_id === 119) link = `primevideo://`;
-            if (p.provider_id === 337) link = `disneyplus://`;
+        if (brProviders && brProviders.length > 0) {
+            streamBox.classList.remove('hidden');
+            brProviders.forEach(p => {
+                // Esquema de Deep Links para abrir direto nos Apps (Netflix, Prime, Disney)
+                let link = provData.results.BR.link; // Link padrão do JustWatch
+                if (p.provider_id === 8) link = `nflx://`;
+                if (p.provider_id === 119) link = `primevideo://`;
+                if (p.provider_id === 337) link = `disneyplus://`;
 
-            streamIcons.innerHTML += `<a href="${link}" target="_blank"><img src="https://image.tmdb.org/t/p/w92${p.logo_path}" class="prov-icon"></a>`;
-        });
-    }
+                streamIcons.innerHTML += `<a href="${link}" target="_blank"><img src="https://image.tmdb.org/t/p/w92${p.logo_path}" class="prov-icon"></a>`;
+            });
+        }
+    } catch (e) { }
+}
 
+function playTrailer(key) {
+    haptic();
+    const wrap = document.getElementById('trailer-embed-wrap');
+    wrap.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${key}?autoplay=1&rel=0" title="Trailer" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+    wrap.classList.remove('hidden');
+    document.getElementById('btn-play-trailer').classList.add('hidden');
 }
 
 // === BUSCA FILME SURPRESA E BOTÃO ADICIONAR ===
