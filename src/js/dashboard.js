@@ -26,6 +26,30 @@ let deleteItemType = null; // NOVO: Guarda de onde estamos deletando ('watchlist
 
 const haptic = () => { if (navigator.vibrate) navigator.vibrate(40); };
 
+// Extrai a cor dominante do pôster em cartaz e usa pra "tingir" nav, ticket e glows
+function applyAmbientColor(imgUrl) {
+    if (!imgUrl) return;
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.onload = () => {
+        try {
+            const colorThief = new ColorThief();
+            const [r, g, b] = colorThief.getColor(img);
+            document.documentElement.style.setProperty('--chameleon-color', `rgba(${r}, ${g}, ${b}, 0.8)`);
+            document.documentElement.style.setProperty('--cr', r);
+            document.documentElement.style.setProperty('--cg', g);
+            document.documentElement.style.setProperty('--cb', b);
+        } catch (e) { /* mantém a cor dourada padrão */ }
+    };
+    img.src = imgUrl;
+}
+function resetAmbientColor() {
+    document.documentElement.style.setProperty('--chameleon-color', `#d4af6a`);
+    document.documentElement.style.setProperty('--cr', 212);
+    document.documentElement.style.setProperty('--cg', 175);
+    document.documentElement.style.setProperty('--cb', 106);
+}
+
 
 
 // PARALLAX MÁGICO
@@ -81,6 +105,8 @@ async function init() {
     setupSearchAndActionSheet();
     setupTicketActions();
     fetchSurpriseSuggestion();
+    setupTinderMode();
+    subscribeRealtimeUpdates();
 }
 
 async function loadData() {
@@ -239,6 +265,7 @@ function updateGlobalUI() {
         safeDisplay('ticket-btns', true); safeDisplay('pending-rating-box', false);
         safeDisplay('btn-choose-movie', false); safeDisplay('btn-concluir-sessao', true); safeDisplay('btn-cancel-sessao', false); safeDisplay('btn-share-wa', false);
         document.getElementById('dynamic-bg').style.backgroundImage = `url('${currentTicketMovie.poster_url}')`;
+        applyAmbientColor(currentTicketMovie.poster_url);
     }
     else {
         safeDisplay('ticket-btns', true); safeDisplay('pending-rating-box', false); pendingRatingId = null;
@@ -265,6 +292,7 @@ function updateGlobalUI() {
                 safeSetText('ticket-title', currentTicketMovie.title); safeSetSrc('ticket-poster', currentTicketMovie.poster_url);
                 safeSetText('ticket-date', `Sessão de Hoje`);
                 document.getElementById('dynamic-bg').style.backgroundImage = `url('${currentTicketMovie.poster_url}')`;
+                applyAmbientColor(currentTicketMovie.poster_url);
                 safeDisplay('btn-choose-movie', false); safeDisplay('btn-concluir-sessao', true); safeDisplay('btn-cancel-sessao', true); safeDisplay('btn-share-wa', true);
                 const btnShare = document.getElementById('btn-share-wa');
                 if(btnShare) btnShare.onclick = () => { haptic(); window.open(`https://wa.me/?text=${encodeURIComponent(`🍿 *Sessão CineCasal!*\n\nFilme marcado: *${currentTicketMovie.title}*\n\nPrepara a pipoca! ❤️`)}`, '_blank'); };
@@ -272,6 +300,7 @@ function updateGlobalUI() {
         } else {
             safeSetText('ticket-title', "Nenhum filme escolhido"); safeSetSrc('ticket-poster', "assets/img/sem-capa.png"); safeSetText('ticket-date', "Toque abaixo para começar");
             document.getElementById('dynamic-bg').style.backgroundImage = `url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba')`;
+            resetAmbientColor();
             safeDisplay('btn-choose-movie', true); safeDisplay('btn-concluir-sessao', false); safeDisplay('btn-cancel-sessao', false); safeDisplay('btn-share-wa', false);
         }
     }
@@ -779,10 +808,26 @@ async function openMovieDetails(tmdbId) {
 }
 
 // === BUSCA FILME SURPRESA E BOTÃO ADICIONAR ===
+// Descobre o gênero que o casal mais gosta, com base nas notas dadas
+function getFavoriteGenreId() {
+    const rated = [...myHistory, ...partnerHistory].filter(h => h.rating && h.rating > 0 && h.movies?.genre && h.movies.genre !== "Variado");
+    if (rated.length < 3) return null;
+    const scores = {};
+    rated.forEach(h => { scores[h.movies.genre] = (scores[h.movies.genre] || 0) + parseFloat(h.rating); });
+    const best = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
+    if (!best) return null;
+    const reverseGenreMap = { "Ação": 28, "Comédia": 35, "Romance": 10749, "Terror": 27, "Drama": 18, "Ficção": 878, "Animação": 16, "Mistério": 9648 };
+    return reverseGenreMap[best[0]] || null;
+}
+
 async function fetchSurpriseSuggestion() {
     try {
         const page = Math.floor(Math.random() * 10) + 1;
-        const res = await tmdbFetch('discover/movie', { language: 'pt-BR', sort_by: 'popularity.desc', 'vote_average.gte': 7.5, 'vote_count.gte': 1000, page });
+        const favGenreId = getFavoriteGenreId();
+        const params = { language: 'pt-BR', sort_by: 'popularity.desc', page };
+        if (favGenreId) { params.with_genres = favGenreId; params['vote_average.gte'] = 7.0; params['vote_count.gte'] = 300; }
+        else { params['vote_average.gte'] = 7.5; params['vote_count.gte'] = 1000; }
+        const res = await tmdbFetch('discover/movie', params);
         const data = await res.json();
         const blockList = [...myHistory.map(h => h.movies.tmdb_id), ...partnerHistory.map(h => h.movies.tmdb_id), ...watchlist.map(w => w.movies.tmdb_id)];
         const joia = data.results.find(m => !blockList.includes(m.id));
@@ -1064,6 +1109,295 @@ function setupNavigation() {
     });
     document.getElementById('tab-me').onclick = (e) => { haptic(); e.target.classList.add('active'); document.getElementById('tab-partner').classList.remove('active'); renderProfile(currentUser.id); };
     document.getElementById('tab-partner').onclick = (e) => { haptic(); e.target.classList.add('active'); document.getElementById('tab-me').classList.remove('active'); renderProfile(partner?.id); };
+}
+
+// ============================================================
+// MODO DESCUBRA JUNTOS (TINDER DE FILMES)
+// ============================================================
+let tinderQueue = [];
+let tinderIndex = 0;
+let tinderPage = 1;
+let tinderLoadingMore = false;
+
+function setupTinderMode() {
+    const openBtn = document.getElementById('btn-open-tinder');
+    if (openBtn) openBtn.onclick = () => { haptic(); openTinderMode(); };
+
+    const startBtn = document.getElementById('btn-tinder-start');
+    if (startBtn) startBtn.onclick = () => { haptic(); startTinderSession(); };
+
+    const likeBtn = document.getElementById('btn-tinder-like');
+    if (likeBtn) likeBtn.onclick = () => swipeTinder(true);
+
+    const noBtn = document.getElementById('btn-tinder-dislike');
+    if (noBtn) noBtn.onclick = () => swipeTinder(false);
+
+    const infoBtn = document.getElementById('btn-tinder-info');
+    if (infoBtn) infoBtn.onclick = () => { const m = tinderQueue[tinderIndex]; if (m) openMovieDetails(m.id); };
+}
+
+function openTinderMode() {
+    document.getElementById('tinder-view').classList.remove('hidden');
+    document.getElementById('tinder-intro').classList.remove('hidden');
+    document.getElementById('tinder-stack').classList.add('hidden');
+}
+window.closeTinderMode = () => {
+    document.getElementById('tinder-view').classList.add('hidden');
+};
+
+async function startTinderSession() {
+    document.getElementById('tinder-intro').classList.add('hidden');
+    document.getElementById('tinder-stack').classList.remove('hidden');
+    document.getElementById('tinder-empty').classList.add('hidden');
+    if (tinderQueue.length === 0) await loadTinderBatch();
+    renderTinderCard();
+}
+
+async function loadTinderBatch() {
+    const loadingEl = document.getElementById('tinder-loading');
+    if (loadingEl) loadingEl.classList.remove('hidden');
+    tinderLoadingMore = true;
+    try {
+        const { data: mySwipes } = await supabaseClient.from('tinder_matches').select('tmdb_id').eq('user_id', currentUser.id);
+        const swipedIds = (mySwipes || []).map(s => s.tmdb_id);
+        const blockList = [...myHistory.map(h => h.movies.tmdb_id), ...partnerHistory.map(h => h.movies.tmdb_id), ...watchlist.map(w => w.movies.tmdb_id), ...swipedIds];
+
+        let fresh = [];
+        let safety = 0;
+        while (fresh.length < 5 && safety < 6) {
+            const res = await tmdbFetch('discover/movie', { language: 'pt-BR', sort_by: 'popularity.desc', 'vote_count.gte': 200, page: tinderPage });
+            const data = await res.json();
+            fresh = fresh.concat((data.results || []).filter(m => !blockList.includes(m.id) && m.poster_path));
+            tinderPage++;
+            safety++;
+            if (!data.results || data.results.length === 0) break;
+        }
+        tinderQueue = tinderQueue.concat(fresh);
+    } catch (e) { /* silencioso, mostra vazio se não rolar */ }
+    if (loadingEl) loadingEl.classList.add('hidden');
+    tinderLoadingMore = false;
+}
+
+function renderTinderCard() {
+    const area = document.getElementById('tinder-card-area');
+    area.querySelectorAll('.tinder-card').forEach(c => c.remove());
+
+    const movie = tinderQueue[tinderIndex];
+    if (!movie) {
+        document.getElementById('tinder-empty').classList.remove('hidden');
+        if (!tinderLoadingMore) loadTinderBatch().then(() => { if (tinderQueue[tinderIndex]) { document.getElementById('tinder-empty').classList.add('hidden'); renderTinderCard(); } });
+        return;
+    }
+    document.getElementById('tinder-empty').classList.add('hidden');
+
+    const card = document.createElement('div');
+    card.className = 'tinder-card';
+    const year = movie.release_date ? movie.release_date.split('-')[0] : '';
+    card.innerHTML = `
+        <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}">
+        <div class="tinder-stamp like">CURTI</div>
+        <div class="tinder-stamp nope">PASSO</div>
+        <div class="tinder-card-info">
+            <h3>${movie.title}</h3>
+            <span>${year} • ⭐ ${movie.vote_average?.toFixed(1) || '-'}</span>
+        </div>
+    `;
+    area.appendChild(card);
+    attachTinderDrag(card);
+}
+
+function attachTinderDrag(card) {
+    let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false;
+    const likeStamp = card.querySelector('.tinder-stamp.like');
+    const nopeStamp = card.querySelector('.tinder-stamp.nope');
+
+    const onDown = (x, y) => { dragging = true; startX = x; startY = y; card.style.transition = 'none'; };
+    const onMove = (x, y) => {
+        if (!dragging) return;
+        dx = x - startX; dy = y - startY;
+        const rot = dx * 0.06;
+        card.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot}deg)`;
+        const op = Math.min(Math.abs(dx) / 100, 1);
+        if (dx > 0) { likeStamp.style.opacity = op; nopeStamp.style.opacity = 0; }
+        else { nopeStamp.style.opacity = op; likeStamp.style.opacity = 0; }
+    };
+    const onUp = () => {
+        if (!dragging) return;
+        dragging = false;
+        card.style.transition = 'transform 0.3s ease';
+        if (Math.abs(dx) > 100) { swipeTinder(dx > 0); }
+        else { card.style.transform = 'translate(0,0) rotate(0)'; likeStamp.style.opacity = 0; nopeStamp.style.opacity = 0; }
+        dx = 0; dy = 0;
+    };
+
+    card.addEventListener('pointerdown', (e) => { card.setPointerCapture(e.pointerId); onDown(e.clientX, e.clientY); });
+    card.addEventListener('pointermove', (e) => onMove(e.clientX, e.clientY));
+    card.addEventListener('pointerup', onUp);
+    card.addEventListener('pointercancel', onUp);
+}
+
+async function swipeTinder(liked) {
+    const movie = tinderQueue[tinderIndex];
+    if (!movie) return;
+    haptic();
+
+    const card = document.querySelector('.tinder-card');
+    if (card) {
+        card.style.transition = 'transform 0.35s ease, opacity 0.35s ease';
+        card.style.transform = `translate(${liked ? 600 : -600}px, -40px) rotate(${liked ? 30 : -30}deg)`;
+        card.style.opacity = '0';
+    }
+
+    tinderIndex++;
+    setTimeout(renderTinderCard, 280);
+
+    try {
+        const posterUrl = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : null;
+        await supabaseClient.from('tinder_matches').insert({ user_id: currentUser.id, tmdb_id: movie.id, title: movie.title, poster_url: posterUrl, liked });
+
+        if (liked && partner) {
+            const { data: partnerLike } = await supabaseClient.from('tinder_matches').select('id').eq('tmdb_id', movie.id).eq('user_id', partner.id).eq('liked', true).maybeSingle();
+            if (partnerLike) await celebrateTinderMatch(movie);
+        }
+    } catch (e) { /* não trava a experiência de swipe por causa de erro de rede */ }
+}
+
+async function celebrateTinderMatch(movie) {
+    try {
+        const movieDB = await syncMovieWithDB(movie);
+        const { data: already } = await supabaseClient.from('watchlist').select('id').eq('movie_id', movieDB.id).maybeSingle();
+        if (!already) await supabaseClient.from('watchlist').insert({ movie_id: movieDB.id, added_by: currentUser.id });
+        if (window.confetti) confetti({ particleCount: 140, spread: 90, origin: { y: 0.6 } });
+        showToast(`🎉 Deu match! "${movie.title || movie.title}" entrou na lista de vocês`);
+        loadData();
+    } catch (e) { }
+}
+
+// ============================================================
+// TEMPO REAL: presença do parceiro + avisos de atividade + matches assíncronos
+// ============================================================
+function subscribeRealtimeUpdates() {
+    if (!partner) return;
+
+    // Presença: mostra se o parceiro está online agora
+    const roomId = [currentUser.id, partner.id].sort().join('-');
+    const presenceChannel = supabaseClient.channel(`presence-${roomId}`, { config: { presence: { key: currentUser.id } } });
+    presenceChannel
+        .on('presence', { event: 'sync' }, () => {
+            const state = presenceChannel.presenceState();
+            const partnerOnline = Object.keys(state).includes(partner.id);
+            const avatarEl = document.getElementById('partner-header-avatar');
+            if (avatarEl) avatarEl.classList.toggle('is-online', partnerOnline);
+        })
+        .subscribe(async (status) => { if (status === 'SUBSCRIBED') await presenceChannel.track({ online_at: new Date().toISOString() }); });
+
+    // Avisa quando o parceiro adiciona algo à lista
+    supabaseClient.channel(`watchlist-activity-${roomId}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'watchlist' }, (payload) => {
+            if (payload.new.added_by && payload.new.added_by !== currentUser.id) {
+                showToast(`${partnerName()} adicionou um filme à lista! 🎬`);
+                loadData();
+            }
+        })
+        .subscribe();
+
+    // Avisa quando o parceiro avalia/assiste algo
+    supabaseClient.channel(`watched-activity-${roomId}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'watched' }, (payload) => {
+            if (payload.new.user_id && payload.new.user_id !== currentUser.id) {
+                showToast(`${partnerName()} acabou de assistir um filme! 🍿`);
+                loadData();
+            }
+        })
+        .subscribe();
+
+    // Detecta match do Tinder mesmo fora do modo de swipe
+    supabaseClient.channel(`tinder-activity-${roomId}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tinder_matches' }, async (payload) => {
+            const row = payload.new;
+            if (row.user_id === partner.id && row.liked) {
+                const { data: myLike } = await supabaseClient.from('tinder_matches').select('id').eq('tmdb_id', row.tmdb_id).eq('user_id', currentUser.id).eq('liked', true).maybeSingle();
+                if (myLike) await celebrateTinderMatch({ id: row.tmdb_id, title: row.title, poster_path: null, poster_url: row.poster_url });
+            }
+        })
+        .subscribe();
+}
+
+function partnerName() {
+    return (partner && partner.name && partner.name !== "Novo Usuário") ? partner.name : "Seu parceiro";
+}
+
+// ============================================================
+// WRAPPED MENSAL
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('btn-open-wrapped');
+    if (btn) btn.onclick = () => { haptic(); openWrappedModal(); };
+});
+
+function openWrappedModal() {
+    const now = new Date();
+    const month = now.getMonth();
+    const year = now.getFullYear();
+    const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    document.getElementById('wrapped-title').innerText = `Resumo de ${monthNames[month]}`;
+
+    const inMonth = (h) => { const d = new Date(h.watched_at); return d.getMonth() === month && d.getFullYear() === year; };
+    const myMonth = myHistory.filter(inMonth);
+    const paMonth = partnerHistory.filter(inMonth);
+
+    const myIds = myMonth.map(h => h.movie_id);
+    const sharedMonth = paMonth.filter(h => myIds.includes(h.movie_id));
+
+    const allRated = [...myMonth, ...paMonth].filter(h => h.rating && h.rating > 0);
+
+    if (allRated.length === 0 && sharedMonth.length === 0) {
+        document.getElementById('wrapped-body').style.display = 'none';
+        document.getElementById('wrapped-empty').classList.remove('hidden');
+    } else {
+        document.getElementById('wrapped-body').style.display = 'flex';
+        document.getElementById('wrapped-empty').classList.add('hidden');
+
+        document.getElementById('wr-total').innerText = sharedMonth.length;
+        const avg = allRated.length ? (allRated.reduce((a, h) => a + parseFloat(h.rating), 0) / allRated.length).toFixed(1) : '0.0';
+        document.getElementById('wr-media').innerText = avg;
+
+        const genreCounts = {};
+        allRated.forEach(h => { const g = h.movies?.genre; if (g && g !== "Variado") genreCounts[g] = (genreCounts[g] || 0) + 1; });
+        const topGenre = Object.entries(genreCounts).sort((a, b) => b[1] - a[1])[0];
+        document.getElementById('wr-genre').innerText = topGenre ? topGenre[0] : "-";
+
+        let best = null, bestScore = -1, worst = null, worstDiff = -1, worstNotes = '';
+        sharedMonth.forEach(s => {
+            const mine = myMonth.find(x => x.movie_id === s.movie_id);
+            if (!mine) return;
+            const a = parseFloat(mine.rating), b = parseFloat(s.rating);
+            if (a > 0 && b > 0) {
+                if (a + b > bestScore) { bestScore = a + b; best = s.movies; }
+                const diff = Math.abs(a - b);
+                if (diff > worstDiff) { worstDiff = diff; worst = s.movies; worstNotes = `Você: ⭐${a} • ${partnerName()}: ⭐${b}`; }
+            }
+        });
+
+        if (best) {
+            document.getElementById('wr-top-card').classList.remove('hidden');
+            document.getElementById('wr-top-poster').src = best.poster_url;
+            document.getElementById('wr-top-title').innerText = best.title;
+            document.getElementById('wr-top-notas').innerText = `Soma: ⭐ ${bestScore.toFixed(1)} / 20`;
+        } else {
+            document.getElementById('wr-top-card').classList.add('hidden');
+        }
+
+        if (worst && worstDiff > 0) {
+            document.getElementById('wr-treta-card').classList.remove('hidden');
+            document.getElementById('wr-treta-title').innerText = worst.title;
+            document.getElementById('wr-treta-notas').innerText = worstNotes;
+        } else {
+            document.getElementById('wr-treta-card').classList.add('hidden');
+        }
+    }
+
+    openModal('modal-wrapped');
 }
 
 init();

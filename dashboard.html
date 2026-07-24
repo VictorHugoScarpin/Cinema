@@ -21,6 +21,8 @@
 </head>
 <body>
     <div id="dynamic-bg" class="dashboard-bg"></div>
+    <div class="vignette-overlay"></div>
+    <div class="grain-overlay"></div>
 
     <div id="toast-container"></div>
 
@@ -72,6 +74,15 @@
                     </div>
                 </div>
 
+                <button id="btn-open-tinder" class="tinder-cta glass-panel">
+                    <span class="tinder-cta-icon">🔥</span>
+                    <div class="tinder-cta-text">
+                        <b>Modo Descubra Juntos</b>
+                        <small>Curtam filmes e vejam se dá match</small>
+                    </div>
+                    <span class="tinder-cta-arrow">›</span>
+                </button>
+
                 <div class="search-wrapper glass-panel">
                     <input type="text" id="search-movie" placeholder="Pesquisar filme..." autocomplete="off">
                     <div id="search-results" class="results-flyout hidden"></div>
@@ -81,6 +92,11 @@
                 <div class="hero-ticket glass-panel" id="ticket-container">
                     <div class="poster-wrapper">
                         <img src="assets/img/sem-capa.png" id="ticket-poster" class="ticket-img">
+                    </div>
+                    <div class="ticket-seam">
+                        <div class="seam-notch top"></div>
+                        <span class="seam-label">Cine Casal</span>
+                        <div class="seam-notch bottom"></div>
                     </div>
                     <div class="ticket-body">
                         <h2 id="ticket-title">Nenhum filme escolhido</h2>
@@ -128,6 +144,15 @@
                     <button class="n-tab active" id="tab-me">Meu Perfil</button>
                     <button class="n-tab" id="tab-partner">Parceiro</button>
                 </div>
+
+                <button id="btn-open-wrapped" class="tinder-cta glass-panel mt-10">
+                    <span class="tinder-cta-icon">📊</span>
+                    <div class="tinder-cta-text">
+                        <b>Resumo do Mês</b>
+                        <small>O raio-x do cinema de vocês</small>
+                    </div>
+                    <span class="tinder-cta-arrow">›</span>
+                </button>
 
                 <div id="tbt-banner" class="tbt-banner hidden">
                     <h3>⏳ De Volta ao Passado!</h3>
@@ -192,9 +217,9 @@
         </main>
 
         <nav class="tab-bar glass-panel">
-            <button class="t-item active" data-target="agenda-section">Home</button>
-            <button class="t-item" data-target="watchlist-section">Lista</button>
-            <button class="t-item" data-target="network-section">Rede</button>
+            <button class="t-item active" data-target="agenda-section"><span class="t-dot"></span><span class="t-icon">🏠</span><span class="t-label">Home</span></button>
+            <button class="t-item" data-target="watchlist-section"><span class="t-dot"></span><span class="t-icon">🎬</span><span class="t-label">Lista</span></button>
+            <button class="t-item" data-target="network-section"><span class="t-dot"></span><span class="t-icon">👥</span><span class="t-label">Rede</span></button>
         </nav>
     </div>
 
@@ -343,6 +368,38 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="/src/js/supabase.js"></script>
 
+<div id="modal-wrapped" class="overlay hidden">
+    <div class="bottom-sheet glass-panel swipeable-sheet wrapped-sheet">
+        <div class="sheet-pill drag-handle"></div>
+        <h3 id="wrapped-title">Resumo do Mês</h3>
+        <div id="wrapped-body" class="wrapped-body">
+            <div class="wrapped-stat-grid">
+                <div class="wrapped-stat"><b id="wr-total">0</b><small>Filmes juntos</small></div>
+                <div class="wrapped-stat"><b id="wr-media">0.0</b><small>Nota média</small></div>
+                <div class="wrapped-stat"><b id="wr-genre">-</b><small>Gênero do mês</small></div>
+            </div>
+            <div class="wrapped-highlight glass-panel" id="wr-top-card">
+                <img id="wr-top-poster" src="assets/img/sem-capa.png">
+                <div>
+                    <small>🏆 Nota mais alta do mês</small>
+                    <h4 id="wr-top-title">-</h4>
+                    <span id="wr-top-notas">-</span>
+                </div>
+            </div>
+            <div class="wrapped-highlight glass-panel" id="wr-treta-card">
+                <div class="wrapped-emoji">🥊</div>
+                <div>
+                    <small>Maior treta do mês</small>
+                    <h4 id="wr-treta-title">Paz reinando</h4>
+                    <span id="wr-treta-notas">-</span>
+                </div>
+            </div>
+            <p id="wrapped-empty" class="sub-text hidden" style="text-align:center; margin-top: 10px;">Vocês ainda não assistiram nada juntos esse mês. Bora resolver isso? 🍿</p>
+        </div>
+        <button onclick="closeModals()" class="btn-text cancel full-width mt-10">Fechar</button>
+    </div>
+</div>
+
 <div id="modal-walkout" class="overlay hidden" style="background: rgba(0,0,0,0.95); z-index: 9999;">
         <div class="walkout-container">
             <div class="walkout-glow" id="walkout-glow"></div>
@@ -363,6 +420,40 @@
             <h2 id="walkout-title" class="walkout-title hidden">Nome do Filme</h2>
         </div>
     </div>
+
+<div id="tinder-view" class="tinder-view hidden">
+    <button class="tinder-close" onclick="closeTinderMode()">✕</button>
+
+    <div id="tinder-intro" class="tinder-intro">
+        <div class="tinder-intro-icon">🔥</div>
+        <h2>Modo Descubra Juntos</h2>
+        <p>Curtam filmes cada um no seu tempo, sem pressa. Quando os dois curtirem o mesmo filme, é <strong>match</strong> — ele cai direto na lista de vocês.</p>
+        <ul class="tinder-rules">
+            <li>❤️ Curtiu = quer ver</li>
+            <li>✕ Não curtiu = pula pro próximo</li>
+            <li>🚪 Saia quando quiser, o progresso continua salvo</li>
+        </ul>
+        <button id="btn-tinder-start" class="btn-solid highlight full-width">Começar a Curtir</button>
+    </div>
+
+    <div id="tinder-stack" class="tinder-stack hidden">
+        <div id="tinder-card-area" class="tinder-card-area">
+            <div id="tinder-loading" class="tinder-empty">
+                <div class="spinner"></div>
+            </div>
+            <div id="tinder-empty" class="tinder-empty hidden">
+                <span class="empty-emoji">🍿</span>
+                <h3>Acabaram os filmes por agora!</h3>
+                <p>Voltem mais tarde pra continuar curtindo.</p>
+            </div>
+        </div>
+        <div class="tinder-actions">
+            <button id="btn-tinder-dislike" class="tinder-btn tinder-btn-no">✕</button>
+            <button id="btn-tinder-info" class="tinder-btn tinder-btn-info">ℹ️</button>
+            <button id="btn-tinder-like" class="tinder-btn tinder-btn-yes">❤️</button>
+        </div>
+    </div>
+</div>
 
     <script type="module" src="/src/js/dashboard.js"></script>
 </body>

@@ -44,7 +44,7 @@ Repare que **isso não usa GitHub Secrets** — como o deploy é feito pela inte
 
 ## Assets
 
-As pastas `assets/img/` (ícones, `sem-capa.png` etc.) não vieram nos arquivos que você me mandou — copie a pasta `assets/` original pra raiz do projeto antes de rodar.
+As imagens (`sem-capa.png`, `icon.png` etc.) vão dentro de `public/assets/img/`. Essa pasta especial `public/` é o que o Vite copia direto pro resultado final do build — arquivos fora dela e referenciados como texto puro (ex: `"assets/img/x.png"` dentro do JS) desaparecem no build de produção, mesmo funcionando em dev local. Não precisa mudar nenhum caminho no código, só colocar os arquivos em `public/assets/img/`.
 
 ## Próximos passos sugeridos
 

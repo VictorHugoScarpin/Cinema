@@ -6,12 +6,24 @@
     --font-body: 'Inter', sans-serif;
     --accent: #d4af6a;
     --accent-soft: rgba(212, 175, 106, 0.15);
+    --cr: 212; --cg: 175; --cb: 106;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
 body { background: #050505; color: #fff; overflow-x: hidden; font-family: var(--font-body); overscroll-behavior-y: none; }
 h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 
 .dashboard-bg { position: fixed; inset: -5%; width: 110%; height: 110%; z-index: -1; filter: blur(50px) brightness(0.2); transition: background-image 1s ease-in-out; background-size: cover; background-position: center; }
+
+/* === AMBIENTE DE CINEMA: grain + vinheta === */
+.grain-overlay {
+    position: fixed; inset: 0; z-index: 5; pointer-events: none;
+    opacity: 0.05; mix-blend-mode: overlay;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%25" height="100%25" filter="url(%23n)"/></svg>');
+}
+.vignette-overlay {
+    position: fixed; inset: 0; z-index: 4; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 40%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.5) 100%);
+}
 
 /* SAFE AREA E PADDING INFERIOR PARA IPHONES/ANDROIDS MODERNOS */
 .glass-container { max-width: 480px; margin: 0 auto; padding: 20px 20px calc(100px + env(safe-area-inset-bottom)); min-height: 100vh; position: relative; }
@@ -53,7 +65,15 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 .result-item { display: flex; gap: 15px; padding: 10px; border-radius: 12px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); }
 
 /* TICKET */
-.hero-ticket { display: flex; flex-direction: row; height: auto; margin-bottom: 30px; position: relative; z-index: 10; border-radius: 20px; align-items: stretch; }
+.hero-ticket { display: flex; flex-direction: row; height: auto; margin-bottom: 30px; position: relative; overflow: visible; z-index: 10; border-radius: 20px; align-items: stretch; box-shadow: 0 20px 50px -15px rgba(var(--cr), var(--cg), var(--cb), 0.35); transition: box-shadow 1s ease; }
+
+/* Costura de ingresso: linha pontilhada + dois "furos" no rasgo */
+.ticket-seam { position: absolute; top: 0; bottom: 0; left: 40%; width: 0; z-index: 15; pointer-events: none; }
+.ticket-seam::before { content: ''; position: absolute; inset: 10px 0; border-left: 2px dashed rgba(255,255,255,0.22); }
+.ticket-seam .seam-notch { position: absolute; left: 50%; transform: translateX(-50%); width: 16px; height: 16px; border-radius: 50%; background: #050505; box-shadow: inset 0 1px 4px rgba(0,0,0,0.7); }
+.ticket-seam .seam-notch.top { top: -8px; }
+.ticket-seam .seam-notch.bottom { bottom: -8px; }
+.ticket-seam .seam-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-90deg); font-size: 9px; font-weight: 700; letter-spacing: 3px; color: var(--text-sec); white-space: nowrap; font-family: var(--font-title); text-transform: uppercase; }
 .poster-wrapper { width: 40%; position: relative; z-index: 2; display: flex; }
 .ticket-img { width: 100%; object-fit: cover; border-right: 1px solid var(--border); border-top-left-radius: 20px; border-bottom-left-radius: 20px; }
 .ticket-body { width: 60%; padding: 20px; display: flex; flex-direction: column; justify-content: center; gap: 12px; z-index: 1; }
@@ -67,6 +87,11 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
     .ticket-img { border-right: none; border-bottom: 1px solid var(--border); border-top-right-radius: 20px; border-bottom-left-radius: 0; }
     .ticket-body { width: 100%; text-align: center; padding: 25px 20px; }
     .btn-group { justify-content: center; }
+    .ticket-seam { top: 240px; left: 0; right: 0; bottom: auto; width: auto; height: 0; }
+    .ticket-seam::before { inset: 0 10px; border-left: none; border-top: 2px dashed rgba(255,255,255,0.22); }
+    .ticket-seam .seam-notch.top { top: -8px; left: -8px; transform: none; }
+    .ticket-seam .seam-notch.bottom { bottom: auto; top: -8px; left: auto; right: -8px; transform: none; }
+    .ticket-seam .seam-label { transform: translate(-50%, -50%) rotate(0deg); }
 }
 
 .suggestion-card { display: flex; align-items: center; gap: 15px; padding: 15px; cursor: pointer; }
@@ -143,8 +168,14 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 
 /* TAB BAR COM SAFE AREA */
 .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; height: calc(75px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); display: flex; justify-content: space-around; align-items: center; z-index: 2000; border-radius: 35px 35px 0 0; border-bottom: none; }
-.t-item { flex: 1; background: none; border: none; color: var(--text-sec); font-weight: 700; font-size: 14px; transition: 0.3s; display: flex; justify-content: center; align-items: center; height: 100%; font-family: var(--font-title); }
-.t-item.active { color: var(--accent); transform: translateY(-3px); }
+.t-item { flex: 1; background: none; border: none; color: var(--text-sec); font-weight: 700; font-size: 14px; transition: 0.3s; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; font-family: var(--font-title); }
+.t-item.active { color: var(--accent); color: rgb(var(--cr), var(--cg), var(--cb)); transform: translateY(-3px); }
+.t-item { position: relative; }
+.t-item .t-dot { position: absolute; top: 2px; left: 50%; transform: translateX(-50%) scale(0); width: 5px; height: 5px; border-radius: 50%; background: rgb(var(--cr), var(--cg), var(--cb)); box-shadow: 0 0 8px rgb(var(--cr), var(--cg), var(--cb)); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.t-item.active .t-dot { transform: translateX(-50%) scale(1); }
+.t-item .t-icon { font-size: 19px; display: block; margin-bottom: 2px; filter: grayscale(1); opacity: 0.6; transition: 0.3s; }
+.t-item.active .t-icon { filter: grayscale(0); opacity: 1; transform: scale(1.08); }
+.t-item .t-label { font-size: 10px; letter-spacing: 0.3px; }
 
 /* MODAIS & SWIPE TO DISMISS */
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); display: flex; justify-content: center; align-items: flex-end; z-index: 3000; }
@@ -220,3 +251,57 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 .walkout-back img { width: 100%; height: 100%; object-fit: cover; }
 .walkout-title { margin-top: 30px; font-size: 28px; color: #fff; text-shadow: 0 5px 15px rgba(0,0,0,0.8); z-index: 2; animation: popIn 0.5s ease forwards; text-align: center; padding: 0 20px; }
 @keyframes popIn { 0% { opacity: 0; transform: scale(0.5); } 100% { opacity: 1; transform: scale(1); } }
+
+/* ============ MODO DESCUBRA JUNTOS (TINDER) ============ */
+.tinder-cta { display: flex; align-items: center; gap: 14px; padding: 16px; margin-bottom: 20px; cursor: pointer; border: 1px solid rgba(var(--cr), var(--cg), var(--cb), 0.35); transition: transform 0.2s ease; }
+.tinder-cta:active { transform: scale(0.98); }
+.tinder-cta-icon { font-size: 26px; }
+.tinder-cta-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.tinder-cta-text small { color: var(--text-sec); font-size: 12px; }
+.tinder-cta-arrow { font-size: 22px; color: var(--text-sec); }
+
+.tinder-view { position: fixed; inset: 0; z-index: 6000; background: #050505; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px calc(20px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left)); }
+.tinder-close { position: absolute; top: calc(20px + env(safe-area-inset-top)); right: 20px; z-index: 10; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; width: 38px; height: 38px; border-radius: 50%; font-size: 16px; }
+
+.tinder-intro { max-width: 380px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.tinder-intro-icon { font-size: 46px; }
+.tinder-intro h2 { font-size: 24px; }
+.tinder-intro p { color: var(--text-sec); font-size: 14px; line-height: 1.5; }
+.tinder-rules { list-style: none; text-align: left; width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 16px; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+.tinder-intro .btn-solid { margin-top: 8px; }
+
+.tinder-stack { width: 100%; max-width: 380px; height: 100%; max-height: 640px; display: flex; flex-direction: column; gap: 20px; }
+.tinder-card-area { position: relative; flex: 1; }
+.tinder-card { position: absolute; inset: 0; border-radius: 24px; overflow: hidden; background: #111; box-shadow: 0 20px 50px rgba(0,0,0,0.6); touch-action: none; will-change: transform; user-select: none; }
+.tinder-card img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.tinder-card-info { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px 18px calc(18px + env(safe-area-inset-bottom)); background: linear-gradient(to top, rgba(0,0,0,0.92), rgba(0,0,0,0)); }
+.tinder-card-info h3 { font-size: 19px; margin-bottom: 4px; }
+.tinder-card-info span { font-size: 12px; color: rgba(255,255,255,0.7); }
+.tinder-stamp { position: absolute; top: 30px; padding: 6px 14px; border: 4px solid; border-radius: 10px; font-family: var(--font-title); font-weight: 800; font-size: 24px; text-transform: uppercase; opacity: 0; transform: rotate(-20deg); }
+.tinder-stamp.like { left: 20px; color: #34c759; border-color: #34c759; }
+.tinder-stamp.nope { right: 20px; color: #ff453a; border-color: #ff453a; transform: rotate(20deg); }
+
+.tinder-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; color: var(--text-sec); }
+.tinder-empty.hidden { display: none; }
+
+.tinder-actions { display: flex; justify-content: center; align-items: center; gap: 24px; }
+.tinder-btn { width: 62px; height: 62px; border-radius: 50%; border: 1px solid var(--border); background: rgba(255,255,255,0.06); font-size: 24px; display: flex; align-items: center; justify-content: center; transition: transform 0.15s ease; }
+.tinder-btn:active { transform: scale(0.88); }
+.tinder-btn-no { color: #ff453a; }
+.tinder-btn-yes { width: 72px; height: 72px; font-size: 28px; color: #34c759; box-shadow: 0 0 25px rgba(52,199,89,0.35); }
+.tinder-btn-info { width: 44px; height: 44px; font-size: 16px; }
+
+/* ============ WRAPPED MENSAL ============ */
+.wrapped-sheet { max-height: 85vh; overflow-y: auto; }
+.wrapped-body { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
+.wrapped-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 16px; padding: 16px 8px; }
+.wrapped-stat b { display: block; font-size: 20px; font-family: var(--font-title); }
+.wrapped-stat small { font-size: 11px; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.5px; }
+.wrapped-highlight { display: flex; align-items: center; gap: 14px; padding: 14px; }
+.wrapped-highlight img { width: 50px; height: 75px; border-radius: 10px; object-fit: cover; }
+.wrapped-highlight small { color: var(--text-sec); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+.wrapped-highlight h4 { font-size: 15px; margin: 3px 0; }
+.wrapped-emoji { font-size: 32px; width: 50px; text-align: center; }
+
+/* Bolinha verde de presença online no avatar do parceiro */
+.av-sm.is-online { box-shadow: 0 0 0 2px #050505, 0 0 0 4px #34c759; }

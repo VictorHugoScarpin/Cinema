@@ -133,3 +133,32 @@ body, html {
     border: 2px solid rgba(255, 255, 255, 0.5);
     object-fit: cover; /* Garante que a foto não fique espremida */
 }
+/* === Ambiente de cinema (grain + vinheta), reaproveitado do dashboard === */
+.grain-overlay {
+    position: fixed; inset: 0; z-index: 5; pointer-events: none;
+    opacity: 0.05; mix-blend-mode: overlay;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%25" height="100%25" filter="url(%23n)"/></svg>');
+}
+.vignette-overlay {
+    position: fixed; inset: 0; z-index: 4; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 40%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.55) 100%);
+}
+
+/* === Emblema do casal + animação de entrada === */
+.duo-emblem { position: relative; height: 70px; margin: 0 auto 18px; width: 100px; }
+.duo-circle {
+    position: absolute; top: 0; width: 56px; height: 56px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 24px;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px); box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    opacity: 0; transform: scale(0.6);
+}
+.duo-1 { left: 6px; animation: duoIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s forwards; }
+.duo-2 { right: 6px; animation: duoIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s forwards; }
+
+@keyframes duoIn {
+    to { opacity: 1; transform: scale(1); }
+}
+
+.enter-anim { opacity: 0; transform: translateY(18px); animation: panelIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+@keyframes panelIn { to { opacity: 1; transform: translateY(0); } }

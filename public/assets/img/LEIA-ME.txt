@@ -1,0 +1,1 @@
+Pasta pronta para receber os arquivos: sem-capa.png, icon.png, bg-login.jpg (se usar) etc.
