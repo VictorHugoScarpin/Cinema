@@ -392,3 +392,5 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 @keyframes curtainOpenLeft { to { transform: translateX(-100%); } }
 @keyframes curtainOpenRight { to { transform: translateX(100%); } }
 .curtain-overlay.done { display: none; }
+
+.demand-badge p strong { color: var(--accent); }

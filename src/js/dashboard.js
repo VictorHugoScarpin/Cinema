@@ -94,6 +94,7 @@ async function init() {
     subscribeRealtimeUpdates();
     setupTretaArchive();
     updateDemandBadge();
+    updateSofaHoursStat();
 }
 
 async function loadData() {
@@ -666,7 +667,7 @@ function setupTicketActions() {
             const { error } = await supabaseClient.from('watched').update({ rating: nota }).eq('id', pendingRatingId);
             btnSaveRating.innerText = originalText; btnSaveRating.disabled = false;
 
-            if (error) return showToast("Erro no banco: A nota foi bloqueada.");
+            if (error) { console.error('Erro ao salvar nota:', error); return showToast(`Erro no banco: ${error.message || 'nota bloqueada.'}`); }
             closeModals(); document.getElementById('input-rating').value = ''; pendingRatingId = null; loadData(); showToast("Nota salva com sucesso!", "trophy");
         };
     }
@@ -1573,6 +1574,37 @@ function playCurtainIntro() {
         el.classList.add('opening');
         setTimeout(() => el.classList.add('done'), 1100);
     });
+}
+
+// Soma a duração de todos os filmes assistidos juntos = "horas no sofá"
+async function updateSofaHoursStat() {
+    const badge = document.getElementById('sofa-badge');
+    const text = document.getElementById('sofa-text');
+    if (!badge || !partner) { if (badge) badge.classList.add('hidden'); return; }
+
+    const myIds = myHistory.map(h => h.movie_id);
+    const sharedAll = partnerHistory.filter(h => myIds.includes(h.movie_id));
+    const uniqueShared = [...new Map(sharedAll.map(h => [h.movies.tmdb_id, h.movies])).values()];
+
+    if (uniqueShared.length === 0) { badge.classList.add('hidden'); return; }
+
+    try {
+        const sample = uniqueShared.slice(0, 60); // limite razoável de chamadas
+        const runtimes = await Promise.all(sample.map(async m => {
+            try {
+                const res = await tmdbFetch(`movie/${m.tmdb_id}`, { language: 'pt-BR' });
+                const data = await res.json();
+                return data.runtime || 0;
+            } catch (e) { return 0; }
+        }));
+        const totalMinutes = runtimes.reduce((a, b) => a + b, 0);
+        if (totalMinutes === 0) { badge.classList.add('hidden'); return; }
+
+        const hours = Math.floor(totalMinutes / 60);
+        const mins = totalMinutes % 60;
+        badge.classList.remove('hidden');
+        text.innerHTML = `Vocês já passaram <strong>${hours}h${mins > 0 ? ` ${mins}min` : ''}</strong> juntos no sofá assistindo filmes.`;
+    } catch (e) { badge.classList.add('hidden'); }
 }
 
 init();
