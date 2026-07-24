@@ -56,7 +56,7 @@
                     
                     <div class="dynamic-boxes">
                         <div class="critical-box">
-                            <div class="crit-icon">👑</div>
+                            <div class="crit-icon" data-icon="crown"></div>
                             <div class="crit-info">
                                 <small>O Mais Crítico</small>
                                 <b id="crit-name">Ninguém</b>
@@ -64,7 +64,7 @@
                             </div>
                         </div>
                         <div class="treta-box mt-10" id="treta-container">
-                            <div class="crit-icon" id="treta-emoji">🥊</div>
+                            <div class="crit-icon" id="treta-emoji" data-icon="bolt"></div>
                             <div class="crit-info">
                                 <small id="treta-label">Maior Treta</small>
                                 <b id="treta-movie">Paz reinando</b>
@@ -75,7 +75,7 @@
                 </div>
 
                 <button id="btn-open-tinder" class="tinder-cta glass-panel">
-                    <span class="tinder-cta-icon">🔥</span>
+                    <span class="tinder-cta-icon" data-icon="flame"></span>
                     <div class="tinder-cta-text">
                         <b>Modo Descubra Juntos</b>
                         <small>Curtam filmes e vejam se dá match</small>
@@ -103,16 +103,16 @@
                         <p id="ticket-date">Toque abaixo para começar</p>
                         
                         <div id="ticket-btns" class="btn-group" style="flex-direction: column;">
-                            <button id="btn-choose-movie" class="btn-solid highlight full-width">🎬 Escolher Filme</button>
-                            <button id="btn-concluir-sessao" class="btn-solid highlight full-width hidden">✓ Concluir Sessão</button>
+                            <button id="btn-choose-movie" class="btn-solid highlight full-width"><span class="icon" data-icon="clapper"></span> Escolher Filme</button>
+                            <button id="btn-concluir-sessao" class="btn-solid highlight full-width hidden"><span class="icon" data-icon="check"></span> Concluir Sessão</button>
                             <button id="btn-cancel-sessao" class="btn-text cancel hidden" style="margin-top:0;">Cancelar Escolha</button>
                         </div>
                         
-                        <button id="btn-share-wa" class="btn-outline-sm hidden" style="margin-top: 12px; width: 100%; border-color: #25D366; color: #25D366;">📱 Convocar</button>
+                        <button id="btn-share-wa" class="btn-outline-sm hidden" style="margin-top: 12px; width: 100%; border-color: #25D366; color: #25D366;"><span class="icon" data-icon="device"></span> Convocar</button>
 
                         <div id="pending-rating-box" class="hidden">
                             <p class="pending-alert">Aguardando avaliação</p>
-                            <button id="btn-open-rating" class="btn-solid highlight full-width">⭐ Dar Nota</button>
+                            <button id="btn-open-rating" class="btn-solid highlight full-width"><span class="icon" data-icon="star"></span> Dar Nota</button>
                         </div>
                     </div>
                 </div>
@@ -122,9 +122,9 @@
                     <img id="sug-poster" src="assets/img/sem-capa.png" class="sug-img">
                     <div class="sug-info" style="flex: 1;">
                         <h4 id="sug-title">Buscando joia...</h4>
-                        <p>Nota TMDB: ⭐ <span id="sug-rating">-</span></p>
+                        <p>Nota TMDB: <span class="icon" data-icon="star"></span> <span id="sug-rating">-</span></p>
                     </div>
-                    <button id="btn-add-surprise" class="btn-sq" style="width: 40px; height: 40px; border-radius: 50%; font-size: 16px; margin-left: 10px; z-index: 5; background: rgba(255,255,255,0.1);">➕</button>
+                    <button id="btn-add-surprise" class="btn-sq" style="width: 40px; height: 40px; border-radius: 50%; margin-left: 10px; z-index: 5; background: rgba(255,255,255,0.1);"><span class="icon" data-icon="plus"></span></button>
                 </div>
             </section>
 
@@ -132,7 +132,7 @@
                 <div class="label-section">QUEREMOS VER (Segure o pôster para apagar)</div>
                 <div class="movie-grid" id="watchlist-grid"></div>
                 <div id="watchlist-empty" class="empty-state hidden">
-                    <span class="empty-emoji">🍿</span>
+                    <span class="empty-emoji" data-icon="popcorn"></span>
                     <h3>Lista Vazia</h3>
                     <p>Que tal pesquisar aquele filme que vocês estão enrolando pra ver?</p>
                 </div>
@@ -146,7 +146,7 @@
                 </div>
 
                 <button id="btn-open-wrapped" class="tinder-cta glass-panel mt-10">
-                    <span class="tinder-cta-icon">📊</span>
+                    <span class="tinder-cta-icon" data-icon="chartBar"></span>
                     <div class="tinder-cta-text">
                         <b>Resumo do Mês</b>
                         <small>O raio-x do cinema de vocês</small>
@@ -188,9 +188,9 @@
                 <div id="box-comum" class="prof-content">
                     
                     <div id="hall-da-fama" class="hidden" style="margin-bottom: 20px;">
-                        <div class="label-section text-center">🏆 Filme do Mês</div>
+                        <div class="label-section text-center"><span class="icon" data-icon="trophy"></span> Filme do Mês</div>
                         <div class="hall-card glass-panel" id="hall-card-bg">
-                            <div class="hall-crown">👑</div>
+                            <div class="hall-crown" data-icon="crown"></div>
                             <img id="hall-poster" src="assets/img/sem-capa.png" class="hall-img">
                             <div class="hall-info">
                                 <h3 id="hall-title">Título</h3>
@@ -208,7 +208,7 @@
                     <div class="shared-list" id="shared-movies-list"></div>
                     
                     <div id="shared-empty" class="empty-state hidden mt-15">
-                        <span class="empty-emoji">🎬</span>
+                        <span class="empty-emoji" data-icon="clapper"></span>
                         <h3>Nenhum Filme em Comum</h3>
                         <p>Usem a roleta na Home para a primeira sessão juntos!</p>
                     </div>
@@ -217,9 +217,9 @@
         </main>
 
         <nav class="tab-bar glass-panel">
-            <button class="t-item active" data-target="agenda-section"><span class="t-dot"></span><span class="t-icon">🏠</span><span class="t-label">Home</span></button>
-            <button class="t-item" data-target="watchlist-section"><span class="t-dot"></span><span class="t-icon">🎬</span><span class="t-label">Lista</span></button>
-            <button class="t-item" data-target="network-section"><span class="t-dot"></span><span class="t-icon">👥</span><span class="t-label">Rede</span></button>
+            <button class="t-item active" data-target="agenda-section"><span class="t-dot"></span><span class="t-icon" data-icon="home"></span><span class="t-label">Home</span></button>
+            <button class="t-item" data-target="watchlist-section"><span class="t-dot"></span><span class="t-icon" data-icon="clapper"></span><span class="t-label">Lista</span></button>
+            <button class="t-item" data-target="network-section"><span class="t-dot"></span><span class="t-icon" data-icon="users"></span><span class="t-label">Rede</span></button>
         </nav>
     </div>
 
@@ -238,8 +238,8 @@
             <div class="sheet-pill drag-handle"></div>
             <h3 id="sheet-title">Título</h3>
             <div class="modal-options">
-                <button id="opt-watchlist" class="btn-solid">🎥 Adicionar à Lista</button>
-                <button id="opt-history" class="btn-outline">⭐ Já assisti sozinho</button>
+                <button id="opt-watchlist" class="btn-solid"><span class="icon" data-icon="clapper"></span> Adicionar à Lista</button>
+                <button id="opt-history" class="btn-outline"><span class="icon" data-icon="star"></span> Já assisti sozinho</button>
             </div>
         </div>
     </div>
@@ -249,7 +249,7 @@
             <div class="sheet-pill drag-handle"></div>
             <h3>Sua Avaliação</h3>
             <p id="rating-movie-title" class="sub-text">Filme</p>
-            <input type="number" id="input-rating" min="1" max="10" step="0.5" placeholder="Nota de 1 a 10 (ex: 8.5)" class="glass-input text-center giant-input">
+            <input type="number" id="input-rating" min="1" max="10" step="0.1" placeholder="Nota de 1 a 10 (ex: 8.7)" class="glass-input text-center giant-input">
             <button id="btn-save-rating" class="btn-solid highlight full-width mt-15">Confirmar Nota</button>
         </div>
     </div>
@@ -280,7 +280,7 @@
     <div id="modal-movie-details" class="overlay hidden">
         <div class="details-card glass-panel swipeable-sheet">
             <div class="sheet-pill drag-handle" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 20;"></div>
-            <button class="close-details" onclick="closeModals()">✕</button>
+            <button class="close-details" onclick="closeModals()"><span class="icon" data-icon="close"></span></button>
             
             <div id="detail-skeleton" style="width: 100%; height: 100%; padding: 20px; display: flex; flex-direction: column; gap: 15px; margin-top: 30px;">
                 <div class="skeleton" style="height: 200px; border-radius: 16px;"></div>
@@ -302,7 +302,7 @@
                     </div>
                     
                     <div class="streaming-box hidden" id="streaming-box">
-                        <p style="font-size: 10px; text-transform: uppercase; color: var(--text-sec); margin-bottom: 5px;">🍿 Onde Assistir</p>
+                        <p style="font-size: 10px; text-transform: uppercase; color: var(--text-sec); margin-bottom: 5px;"><span class="icon" data-icon="popcorn"></span> Onde Assistir</p>
                         <div id="streaming-icons" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
                     </div>
 
@@ -319,11 +319,11 @@
     <div id="modal-choose-mode" class="overlay hidden">
         <div class="bottom-sheet glass-panel swipeable-sheet">
             <div class="sheet-pill drag-handle"></div>
-            <h3>Sessão Pipoca 🍿</h3>
+            <h3>Sessão Pipoca <span class="icon" data-icon="popcorn"></span></h3>
             <p class="sub-text">Como vamos escolher o filme de hoje?</p>
             <div class="modal-options">
-                <button id="btn-mode-roleta" class="btn-solid">🎲 Sortear da Lista</button>
-                <button id="btn-mode-search" class="btn-outline">🔍 Pesquisar Agora</button>
+                <button id="btn-mode-roleta" class="btn-solid"><span class="icon" data-icon="dice"></span> Sortear da Lista</button>
+                <button id="btn-mode-search" class="btn-outline"><span class="icon" data-icon="search"></span> Pesquisar Agora</button>
             </div>
         </div>
     </div>
@@ -342,11 +342,11 @@
     <div id="modal-status-sessao" class="overlay hidden">
     <div class="bottom-sheet glass-panel swipeable-sheet">
         <div class="sheet-pill drag-handle"></div>
-        <h3>Fim da Sessão 🍿</h3>
+        <h3>Fim da Sessão <span class="icon" data-icon="popcorn"></span></h3>
         <p class="sub-text">Como foi sua experiência com este filme?</p>
         <div class="modal-options mt-15" style="display: flex; flex-direction: column; gap: 10px;">
-            <button id="btn-status-vi-tudo" class="btn-solid highlight full-width">Assisti tudo! 🍿</button>
-            <button id="btn-status-dormi" class="btn-outline full-width">Dormi no meio... 😴</button>
+            <button id="btn-status-vi-tudo" class="btn-solid highlight full-width">Assisti tudo! <span class="icon" data-icon="popcorn"></span></button>
+            <button id="btn-status-dormi" class="btn-outline full-width">Dormi no meio... <span class="icon" data-icon="moon"></span></button>
         </div>
         <button onclick="closeModals()" class="btn-text cancel full-width mt-10">Cancelar</button>
     </div>
@@ -356,7 +356,7 @@
     <div class="bottom-sheet glass-panel swipeable-sheet">
         <div class="sheet-pill drag-handle"></div>
         <h3>Você já viu este filme!</h3>
-        <p class="sub-text">Sua nota anterior foi: <strong id="old-rating-display" style="color:gold; font-size: 18px;">⭐ 0.0</strong></p>
+        <p class="sub-text">Sua nota anterior foi: <strong id="old-rating-display" style="color:gold; font-size: 18px;"><span class="icon" data-icon="star"></span> 0.0</strong></p>
         <div class="modal-options mt-15">
             <button id="btn-keep-rating" class="btn-outline">Manter Nota</button>
             <button id="btn-change-rating" class="btn-solid highlight">Mudar Nota</button>
@@ -381,20 +381,20 @@
             <div class="wrapped-highlight glass-panel" id="wr-top-card">
                 <img id="wr-top-poster" src="assets/img/sem-capa.png">
                 <div>
-                    <small>🏆 Nota mais alta do mês</small>
+                    <small><span class="icon" data-icon="trophy"></span> Nota mais alta do mês</small>
                     <h4 id="wr-top-title">-</h4>
                     <span id="wr-top-notas">-</span>
                 </div>
             </div>
             <div class="wrapped-highlight glass-panel" id="wr-treta-card">
-                <div class="wrapped-emoji">🥊</div>
+                <div class="wrapped-emoji" data-icon="bolt"></div>
                 <div>
                     <small>Maior treta do mês</small>
                     <h4 id="wr-treta-title">Paz reinando</h4>
                     <span id="wr-treta-notas">-</span>
                 </div>
             </div>
-            <p id="wrapped-empty" class="sub-text hidden" style="text-align:center; margin-top: 10px;">Vocês ainda não assistiram nada juntos esse mês. Bora resolver isso? 🍿</p>
+            <p id="wrapped-empty" class="sub-text hidden" style="text-align:center; margin-top: 10px;">Vocês ainda não assistiram nada juntos esse mês. Bora resolver isso? <span class="icon" data-icon="popcorn"></span></p>
         </div>
         <button onclick="closeModals()" class="btn-text cancel full-width mt-10">Fechar</button>
     </div>
@@ -422,16 +422,16 @@
     </div>
 
 <div id="tinder-view" class="tinder-view hidden">
-    <button class="tinder-close" onclick="closeTinderMode()">✕</button>
+    <button class="tinder-close" onclick="closeTinderMode()"><span class="icon" data-icon="close"></span></button>
 
     <div id="tinder-intro" class="tinder-intro">
-        <div class="tinder-intro-icon">🔥</div>
+        <div class="tinder-intro-icon" data-icon="flame"></div>
         <h2>Modo Descubra Juntos</h2>
         <p>Curtam filmes cada um no seu tempo, sem pressa. Quando os dois curtirem o mesmo filme, é <strong>match</strong> — ele cai direto na lista de vocês.</p>
         <ul class="tinder-rules">
-            <li>❤️ Curtiu = quer ver</li>
-            <li>✕ Não curtiu = pula pro próximo</li>
-            <li>🚪 Saia quando quiser, o progresso continua salvo</li>
+            <li><span class="icon" data-icon="heart"></span> Curtiu = quer ver</li>
+            <li><span class="icon" data-icon="close"></span> Não curtiu = pula pro próximo</li>
+            <li><span class="icon" data-icon="door"></span> Saia quando quiser, o progresso continua salvo</li>
         </ul>
         <button id="btn-tinder-start" class="btn-solid highlight full-width">Começar a Curtir</button>
     </div>
@@ -442,15 +442,15 @@
                 <div class="spinner"></div>
             </div>
             <div id="tinder-empty" class="tinder-empty hidden">
-                <span class="empty-emoji">🍿</span>
+                <span class="empty-emoji" data-icon="popcorn"></span>
                 <h3>Acabaram os filmes por agora!</h3>
                 <p>Voltem mais tarde pra continuar curtindo.</p>
             </div>
         </div>
         <div class="tinder-actions">
-            <button id="btn-tinder-dislike" class="tinder-btn tinder-btn-no">✕</button>
+            <button id="btn-tinder-dislike" class="tinder-btn tinder-btn-no"><span class="icon" data-icon="close"></span></button>
             <button id="btn-tinder-info" class="tinder-btn tinder-btn-info">ℹ️</button>
-            <button id="btn-tinder-like" class="tinder-btn tinder-btn-yes">❤️</button>
+            <button id="btn-tinder-like" class="tinder-btn tinder-btn-yes"><span class="icon" data-icon="heart"></span></button>
         </div>
     </div>
 </div>

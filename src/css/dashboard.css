@@ -53,7 +53,7 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 
 .dynamic-boxes { display: flex; flex-direction: column; gap: 10px; }
 .critical-box, .treta-box { display: flex; align-items: center; padding: 12px 20px; border-radius: 16px; border: 1px solid var(--border); background: rgba(0,0,0,0.3); transition: 0.3s; }
-.crit-icon { font-size: 24px; }
+.crit-icon { width: 24px; height: 24px; }
 .crit-info { flex: 1; margin-left: 15px; }
 .crit-info small { font-size: 10px; color: gold; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
 .crit-info b { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; }
@@ -99,9 +99,9 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 .sug-info h4 { font-size: 14px; margin-bottom: 5px; }
 
 /* BOTOES E LOADING STATE */
-.btn-solid { position: relative; background: #fff; color: #000; border: none; padding: 16px 20px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 15px; font-family: var(--font-title); display: flex; justify-content: center; align-items: center; }
+.btn-solid { position: relative; background: #fff; color: #000; border: none; padding: 16px 20px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 15px; font-family: var(--font-title); display: flex; justify-content: center; align-items: center; gap: 8px; }
 .btn-solid.highlight { background: #007aff; color: #fff; box-shadow: 0 5px 15px rgba(0,122,255,0.4); }
-.btn-outline { background: transparent; color: #fff; border: 1px solid var(--border); padding: 14px 20px; border-radius: 14px; font-weight: 600; font-family: var(--font-title); }
+.btn-outline { background: transparent; color: #fff; border: 1px solid var(--border); padding: 16px 20px; border-radius: 14px; font-weight: 600; font-family: var(--font-title); display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 15px; cursor: pointer; transition: 0.2s; }
 .btn-outline-sm { background: transparent; border: 1px solid var(--border); color: #fff; padding: 10px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; }
 .btn-pill { background: #fff; color: #000; border: none; padding: 12px 24px; border-radius: 30px; font-weight: 700; font-family: var(--font-title); }
 .btn-sq { background: var(--glass); border: 1px solid var(--border); width: 44px; height: 44px; border-radius: 16px; color: #fff; font-size: 18px; display: flex; justify-content: center; align-items: center; }
@@ -134,7 +134,7 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 .sync-fill { height: 100%; background: linear-gradient(90deg, #ff3b30, #ff9f0a, #34c759); width: 0%; transition: width 1s ease; }
 
 .empty-state { text-align: center; padding: 40px 20px; color: var(--text-sec); animation: fadeInTab 0.5s ease; }
-.empty-emoji { font-size: 40px; display: block; margin-bottom: 15px; opacity: 0.8; }
+.empty-emoji { width: 40px; height: 40px; margin: 0 auto 15px; opacity: 0.8; }
 .empty-state h3 { font-size: 18px; color: #fff; margin-bottom: 8px; }
 .empty-state p { font-size: 14px; line-height: 1.5; }
 
@@ -173,7 +173,7 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 .t-item { position: relative; }
 .t-item .t-dot { position: absolute; top: 2px; left: 50%; transform: translateX(-50%) scale(0); width: 5px; height: 5px; border-radius: 50%; background: rgb(var(--cr), var(--cg), var(--cb)); box-shadow: 0 0 8px rgb(var(--cr), var(--cg), var(--cb)); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .t-item.active .t-dot { transform: translateX(-50%) scale(1); }
-.t-item .t-icon { font-size: 19px; display: block; margin-bottom: 2px; filter: grayscale(1); opacity: 0.6; transition: 0.3s; }
+.t-item .t-icon { width: 19px; height: 19px; margin: 0 auto 2px; filter: grayscale(1); opacity: 0.6; transition: 0.3s; }
 .t-item.active .t-icon { filter: grayscale(0); opacity: 1; transform: scale(1.08); }
 .t-item .t-label { font-size: 10px; letter-spacing: 0.3px; }
 
@@ -208,7 +208,8 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 
 /* TOAST NOTIFICATIONS */
 #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-.toast { background: rgba(20,20,20,0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 12px 20px; border-radius: 30px; font-size: 14px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.5); opacity: 0; transform: translateY(-20px) scale(0.9); transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); font-family: var(--font-title); }
+.toast { background: rgba(20,20,20,0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 12px 20px; border-radius: 30px; font-size: 14px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.5); opacity: 0; transform: translateY(-20px) scale(0.9); transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); font-family: var(--font-title); display: flex; align-items: center; gap: 10px; }
+.toast-icon { width: 17px; height: 17px; flex-shrink: 0; color: var(--accent); }
 .toast.show { opacity: 1; transform: translateY(0) scale(1); }
 
 /* PULL TO REFRESH */
@@ -227,7 +228,7 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 
 /* HALL DA FAMA */
 .hall-card { display: flex; align-items: center; gap: 15px; padding: 15px; border-radius: 20px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 140, 0, 0.2)); border: 1px solid rgba(255, 215, 0, 0.4); position: relative; overflow: hidden; }
-.hall-crown { position: absolute; top: -10px; right: 10px; font-size: 50px; opacity: 0.2; transform: rotate(15deg); }
+.hall-crown { position: absolute; top: -10px; right: 10px; width: 50px; height: 50px; opacity: 0.2; transform: rotate(15deg); }
 .hall-img { width: 60px; height: 90px; border-radius: 10px; object-fit: cover; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 1; }
 .hall-info { z-index: 1; }
 .hall-info h3 { font-size: 16px; color: gold; margin-bottom: 5px; }
@@ -253,18 +254,18 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 @keyframes popIn { 0% { opacity: 0; transform: scale(0.5); } 100% { opacity: 1; transform: scale(1); } }
 
 /* ============ MODO DESCUBRA JUNTOS (TINDER) ============ */
-.tinder-cta { display: flex; align-items: center; gap: 14px; padding: 16px; margin-bottom: 20px; cursor: pointer; border: 1px solid rgba(var(--cr), var(--cg), var(--cb), 0.35); transition: transform 0.2s ease; }
+.tinder-cta { width: 100%; box-sizing: border-box; text-align: left; font: inherit; color: #fff; display: flex; align-items: center; gap: 14px; padding: 16px; margin-bottom: 20px; cursor: pointer; border: 1px solid rgba(var(--cr), var(--cg), var(--cb), 0.35); transition: transform 0.2s ease; }
 .tinder-cta:active { transform: scale(0.98); }
-.tinder-cta-icon { font-size: 26px; }
+.tinder-cta-icon { width: 26px; height: 26px; color: rgb(var(--cr), var(--cg), var(--cb)); }
 .tinder-cta-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .tinder-cta-text small { color: var(--text-sec); font-size: 12px; }
 .tinder-cta-arrow { font-size: 22px; color: var(--text-sec); }
 
-.tinder-view { position: fixed; inset: 0; z-index: 6000; background: #050505; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px calc(20px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left)); }
+.tinder-view { position: fixed; inset: 0; z-index: 2500; background: #050505; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px calc(20px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left)); }
 .tinder-close { position: absolute; top: calc(20px + env(safe-area-inset-top)); right: 20px; z-index: 10; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; width: 38px; height: 38px; border-radius: 50%; font-size: 16px; }
 
 .tinder-intro { max-width: 380px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; }
-.tinder-intro-icon { font-size: 46px; }
+.tinder-intro-icon { width: 46px; height: 46px; margin: 0 auto; color: var(--accent); }
 .tinder-intro h2 { font-size: 24px; }
 .tinder-intro p { color: var(--text-sec); font-size: 14px; line-height: 1.5; }
 .tinder-rules { list-style: none; text-align: left; width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 16px; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
@@ -301,7 +302,22 @@ h1, h2, h3, h4, h5, b, strong { font-family: var(--font-title); }
 .wrapped-highlight img { width: 50px; height: 75px; border-radius: 10px; object-fit: cover; }
 .wrapped-highlight small { color: var(--text-sec); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
 .wrapped-highlight h4 { font-size: 15px; margin: 3px 0; }
-.wrapped-emoji { font-size: 32px; width: 50px; text-align: center; }
+.wrapped-emoji { width: 32px; height: 32px; color: var(--accent); }
 
 /* Bolinha verde de presença online no avatar do parceiro */
 .av-sm.is-online { box-shadow: 0 0 0 2px #050505, 0 0 0 4px #34c759; }
+
+/* ============ ÍCONES SVG (substituem os emojis) ============ */
+.icon { display: inline-flex; align-items: center; justify-content: center; width: 1em; height: 1em; line-height: 0; }
+.icon svg { width: 100%; height: 100%; display: block; }
+[data-icon] { display: inline-flex; align-items: center; justify-content: center; }
+[data-icon] svg { width: 100%; height: 100%; display: block; }
+
+/* Botão de editar nota (até 5 dias após assistir) */
+.edit-rating-btn { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-sec); display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+.edit-rating-btn:active { transform: scale(0.9); background: var(--accent-soft); color: var(--accent); }
+.edit-rating-btn .icon { width: 15px; height: 15px; }
+
+/* Padroniza qualquer par de botões lado a lado no mesmo tamanho */
+.modal-options { display: flex; gap: 10px; }
+.modal-options > button { flex: 1; min-width: 0; }

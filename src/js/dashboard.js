@@ -1,3 +1,5 @@
+import { ICONS, hydrateIcons } from './icons.js';
+
 const supabaseClient = window.supabaseClient;
 
 // Chave do TMDB agora fica só no servidor (Vercel Function em /api/tmdb.js)
@@ -62,10 +64,15 @@ window.addEventListener('deviceorientation', (e) => {
 });
 
 // TOAST NOTIFICATIONS (Substitui Alert)
-function showToast(msg) {
+function iconInline(name, cls = '') {
+    return `<span class="icon ${cls}">${ICONS[name] || ''}</span>`;
+}
+
+function showToast(msg, iconName) {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
-    toast.className = 'toast'; toast.innerText = msg;
+    toast.className = 'toast';
+    toast.innerHTML = iconName ? `<span class="icon toast-icon">${ICONS[iconName] || ''}</span><span>${msg}</span>` : `<span>${msg}</span>`;
     container.appendChild(toast);
     haptic();
     setTimeout(() => toast.classList.add('show'), 10);
@@ -90,6 +97,7 @@ Chart.defaults.scale.grid.color = 'rgba(255, 255, 255, 0.1)';
 Chart.defaults.scale.ticks.display = false;
 
 async function init() {
+    hydrateIcons();
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) return window.location.href = 'index.html';
     currentUser = session.user;
@@ -194,7 +202,7 @@ function updateGlobalUI() {
                 const diff = Math.abs(mN - pN);
                 if (diff > maxDiff) { 
                     maxDiff = diff; tretaMovie = s.movies.title; 
-                    notasTreta = `Você: ⭐${mN} | ${partnerName}: ⭐${pN}`; 
+                    notasTreta = `Você: ${iconInline("star")}${mN} | ${partnerName}: ${iconInline("star")}${pN}`; 
                 }
             }
         });
@@ -203,10 +211,12 @@ function updateGlobalUI() {
         if (boxTreta) {
             boxTreta.style.background = maxDiff >= 3 ? 'rgba(255, 59, 48, 0.1)' : (maxDiff > 1 ? 'rgba(255, 159, 10, 0.1)' : 'rgba(52, 199, 89, 0.1)');
             boxTreta.style.borderColor = maxDiff >= 3 ? 'rgba(255, 59, 48, 0.3)' : (maxDiff > 1 ? 'rgba(255, 159, 10, 0.3)' : 'rgba(52, 199, 89, 0.3)');
-            safeSetText('treta-emoji', maxDiff >= 3 ? '🥊' : (maxDiff > 1 ? '⚠️' : '🕊️'));
+            const tretaIconName = maxDiff >= 3 ? 'bolt' : (maxDiff > 1 ? 'warning' : 'checkCircle');
+            const tretaEl = document.getElementById('treta-emoji');
+            if (tretaEl) tretaEl.innerHTML = ICONS[tretaIconName];
             safeSetText('treta-label', maxDiff >= 3 ? 'Guerra Mundial' : (maxDiff > 1 ? 'Divergência' : 'Sintonia'));
             
-            if (maxDiff > 1.0) { safeSetText('treta-movie', tretaMovie); safeSetText('treta-notas', notasTreta); } 
+            if (maxDiff > 1.0) { safeSetText('treta-movie', tretaMovie); const tn = document.getElementById('treta-notas'); if (tn) tn.innerHTML = notasTreta; } 
             else { safeSetText('treta-movie', "Paz e Amor"); safeSetText('treta-notas', "Sintonia perfeita nas notas!"); }
         }
 
@@ -225,10 +235,10 @@ function updateGlobalUI() {
             const syncFill = document.getElementById('sync-fill');
             if(syncFill) syncFill.style.width = `${syncPerc}%`;
             let syncMsg = "";
-            if(syncPerc > 85) syncMsg = `${syncPerc}% - Almas Gêmeas 💖`;
-            else if (syncPerc > 60) syncMsg = `${syncPerc}% - Dão pro gasto 🍿`;
-            else syncMsg = `${syncPerc}% - Guerra no Sofá 🥊`;
-            safeSetText('sync-text', syncMsg);
+            if(syncPerc > 85) syncMsg = `${syncPerc}% - Almas Gêmeas ${iconInline('heart')}`;
+            else if (syncPerc > 60) syncMsg = `${syncPerc}% - Dão pro gasto ${iconInline('popcorn')}`;
+            else syncMsg = `${syncPerc}% - Guerra no Sofá ${iconInline('bolt')}`;
+            const syncEl = document.getElementById('sync-text'); if (syncEl) syncEl.innerHTML = syncMsg;
         } else {
             const syncFill = document.getElementById('sync-fill');
             if(syncFill) syncFill.style.width = `0%`;
@@ -295,7 +305,7 @@ function updateGlobalUI() {
                 applyAmbientColor(currentTicketMovie.poster_url);
                 safeDisplay('btn-choose-movie', false); safeDisplay('btn-concluir-sessao', true); safeDisplay('btn-cancel-sessao', true); safeDisplay('btn-share-wa', true);
                 const btnShare = document.getElementById('btn-share-wa');
-                if(btnShare) btnShare.onclick = () => { haptic(); window.open(`https://wa.me/?text=${encodeURIComponent(`🍿 *Sessão CineCasal!*\n\nFilme marcado: *${currentTicketMovie.title}*\n\nPrepara a pipoca! ❤️`)}`, '_blank'); };
+                if(btnShare) btnShare.onclick = () => { haptic(); window.open(`https://wa.me/?text=${encodeURIComponent(`🎬 *Sessão CineCasal!*\n\nFilme marcado: *${currentTicketMovie.title}*\n\nPrepara a pipoca!`)}`, '_blank'); };
             }
         } else {
             safeSetText('ticket-title', "Nenhum filme escolhido"); safeSetSrc('ticket-poster', "assets/img/sem-capa.png"); safeSetText('ticket-date', "Toque abaixo para começar");
@@ -434,7 +444,7 @@ function setupGlobalModals() {
 
             await supabaseClient.from('profiles').update({ name, bio, avatar_url: avatarUrl }).eq('id', currentUser.id);
             setBtnLoading('btn-save-profile', false);
-            closeModals(); loadData(); showToast("Perfil atualizado! ✨");
+            closeModals(); loadData(); showToast("Perfil atualizado!", "sparkle");
         };
     }
 }
@@ -520,7 +530,7 @@ function setupTicketActions() {
                 localStorage.removeItem('cinecasal_answered_' + finalItem.movies.id);
                 
                 document.getElementById('modal-walkout').classList.add('hidden');
-                loadData(); showToast("Filme Escolhido! 🍿");
+                loadData(); showToast("Filme Escolhido!", "popcorn");
             }, 8000);
         };
     }
@@ -568,7 +578,7 @@ function setupTicketActions() {
                         // NOVO: Limpa a memória de resposta ao pesquisar, pra tratar como sessão nova!
                         localStorage.removeItem('cinecasal_answered_' + movieDB.id);
                         
-                        loadData(); showToast("Filme pronto pra sessão! 🎬");
+                        loadData(); showToast("Filme pronto pra sessão!", "clapper");
                     };
                     tFlyout.appendChild(div);
                 });
@@ -600,7 +610,7 @@ function setupTicketActions() {
             const finalizar = async () => {
                 if (meEx && meEx.rating !== null && meEx.rating > 0) {
                     setTimeout(() => {
-                        document.getElementById('old-rating-display').innerText = `⭐ ${meEx.rating}`;
+                        document.getElementById('old-rating-display').innerHTML = `${iconInline('star')} ${meEx.rating}`;
                         openModal('modal-update-rating');
                         
                         document.getElementById('btn-keep-rating').onclick = async () => { 
@@ -640,7 +650,7 @@ function setupTicketActions() {
                 
                 await checkAndDeleteWatchlist(currentTicketMovie.id);
                 currentTicketMovie = null; loadData();
-                showToast("Sessão registrada! Você dormiu 😴");
+                showToast("Sessão registrada! Você dormiu.", "moon");
             });
         };
     }
@@ -678,7 +688,7 @@ function setupTicketActions() {
             btnSaveRating.innerText = originalText; btnSaveRating.disabled = false;
 
             if (error) return showToast("Erro no banco: A nota foi bloqueada.");
-            closeModals(); document.getElementById('input-rating').value = ''; pendingRatingId = null; loadData(); showToast("Nota salva com sucesso! 🏆");
+            closeModals(); document.getElementById('input-rating').value = ''; pendingRatingId = null; loadData(); showToast("Nota salva com sucesso!", "trophy");
         };
     }
 }
@@ -718,7 +728,7 @@ function setupSearchAndActionSheet() {
         if (!selectedMovie) return;
         const m = await syncMovieWithDB(selectedMovie);
         const { error } = await supabaseClient.from('watchlist').insert({ movie_id: m.id, added_by: currentUser.id });
-        if (error) showToast("Filme já está na lista!"); else showToast("Adicionado à Lista! 🎥");
+        if (error) showToast("Filme já está na lista!"); else showToast("Adicionado à Lista!", "clapper");
         closeModals(); loadData();
     };
 
@@ -843,7 +853,7 @@ async function fetchSurpriseSuggestion() {
     } catch (e) { }
 }
 
-// Ação do botão ➕ na Surpresa
+// Ação do botão de adicionar na Surpresa
 const btnAddSurprise = document.getElementById('btn-add-surprise');
 if (btnAddSurprise) {
     btnAddSurprise.onclick = async (e) => {
@@ -859,13 +869,13 @@ if (btnAddSurprise) {
         const m = await syncMovieWithDB(window.surpriseMovieData);
         const { error } = await supabaseClient.from('watchlist').insert({ movie_id: m.id, added_by: currentUser.id });
 
-        btnAddSurprise.innerText = "➕";
+        btnAddSurprise.innerHTML = ICONS.plus;
         btnAddSurprise.disabled = false;
 
         if (error) {
             showToast("Filme já está na lista!");
         } else {
-            showToast("Adicionado à Lista! 🍿");
+            showToast("Adicionado à Lista!", "popcorn");
             loadData(); // Atualiza a aba Lista no fundo
             fetchSurpriseSuggestion(); // Já sorteia uma NOVA surpresa instantaneamente!
         }
@@ -923,7 +933,7 @@ document.getElementById('btn-confirm-delete').onclick = async () => {
         } else if (deleteItemType === 'history') {
             await supabaseClient.from('watched').delete().eq('id', longPressItemToDelete);
         }
-        closeModals(); loadData(); showToast("Filme apagado! 🗑️");
+        closeModals(); loadData(); showToast("Filme apagado!", "trash");
         longPressItemToDelete = null;
         deleteItemType = null;
     }
@@ -987,9 +997,26 @@ async function renderProfile(uid) {
         div.onclick = () => openMovieDetails(h.movies.tmdb_id);
 
         // ATUALIZADO: Exibe "Dormiu" se a nota for 0
-        const notaText = h.rating && h.rating > 0 ? `⭐ ${h.rating}` : (h.rating === 0 ? `<span style="color:#8e8e93">Dormiu 😴</span>` : `<span style="color:#ff9f0a">Pendente</span>`);
-        div.innerHTML = `<img src="${h.movies.poster_url}" class="h-poster"><div><h4 style="font-size:14px; margin-bottom:5px; font-family: var(--font-title);">${h.movies.title}</h4><span style="font-size:12px; opacity:0.6;">Nota: ${notaText}</span></div>`;
+        const notaText = h.rating && h.rating > 0 ? `${iconInline("star")} ${h.rating}` : (h.rating === 0 ? `<span style="color:#8e8e93">${iconInline("moon")} Dormiu</span>` : `<span style="color:#ff9f0a">Pendente</span>`);
+
+        const daysSince = (Date.now() - new Date(h.watched_at).getTime()) / (1000 * 60 * 60 * 24);
+        const canEdit = isMe && daysSince <= 5;
+        const editBtnHtml = canEdit ? `<button class="edit-rating-btn" data-history-id="${h.id}"><span class="icon">${ICONS.pencil}</span></button>` : '';
+
+        div.innerHTML = `<img src="${h.movies.poster_url}" class="h-poster"><div style="flex:1;"><h4 style="font-size:14px; margin-bottom:5px; font-family: var(--font-title);">${h.movies.title}</h4><span style="font-size:12px; opacity:0.6;">Nota: ${notaText}</span></div>${editBtnHtml}`;
         tl.appendChild(div);
+
+        if (canEdit) {
+            const editBtn = div.querySelector('.edit-rating-btn');
+            editBtn.onclick = (e) => {
+                e.stopPropagation();
+                haptic();
+                pendingRatingId = h.id;
+                document.getElementById('rating-movie-title').innerText = h.movies.title;
+                document.getElementById('input-rating').value = h.rating || '';
+                openModal('modal-rating');
+            };
+        }
     });
 
     const obs = new IntersectionObserver((entries) => {
@@ -1039,11 +1066,11 @@ async function renderProfile(uid) {
             const paNote = paNoteObj?.rating;
 
             // ATUALIZADO: Exibe "Dormiu" se a nota for 0
-            let myDisplay = myNote && myNote > 0 ? `⭐ ${myNote}` : (myNote === 0 ? 'Dormiu 😴' : 'Pendente');
-            let paDisplay = paNote && paNote > 0 ? `⭐ ${paNote}` : (paNote === 0 ? 'Dormiu 😴' : 'Pendente');
+            let myDisplay = myNote && myNote > 0 ? `${iconInline('star')} ${myNote}` : (myNote === 0 ? `${iconInline('moon')} Dormiu` : 'Pendente');
+            let paDisplay = paNote && paNote > 0 ? `${iconInline('star')} ${paNote}` : (paNote === 0 ? `${iconInline('moon')} Dormiu` : 'Pendente');
 
             if (myNote === null && paNote > 0) {
-                paDisplay = '<span class="blind-lock">🔒 Oculto</span>';
+                paDisplay = `<span class="blind-lock">${iconInline('lock')} Oculto</span>`;
             }
 
             const div = document.createElement('div'); div.className = 'shared-item'; div.onclick = () => openMovieDetails(m.tmdb_id);
@@ -1064,7 +1091,7 @@ async function renderProfile(uid) {
     if (bestMovie) {
         if (hallEl) hallEl.classList.remove('hidden');
         document.getElementById('hall-title').innerText = bestMovie.title;
-        document.getElementById('hall-notas').innerText = `Soma das notas: ⭐ ${bestScore.toFixed(1)} / 20`;
+        document.getElementById('hall-notas').innerHTML = `Soma das notas: ${iconInline('star')} ${bestScore.toFixed(1)} / 20`;
         document.getElementById('hall-poster').src = bestMovie.poster_url;
     } else {
         if (hallEl) hallEl.classList.add('hidden');
@@ -1199,7 +1226,7 @@ function renderTinderCard() {
         <div class="tinder-stamp nope">PASSO</div>
         <div class="tinder-card-info">
             <h3>${movie.title}</h3>
-            <span>${year} • ⭐ ${movie.vote_average?.toFixed(1) || '-'}</span>
+            <span>${year} • ${iconInline('star')} ${movie.vote_average?.toFixed(1) || '-'}</span>
         </div>
     `;
     area.appendChild(card);
@@ -1268,7 +1295,7 @@ async function celebrateTinderMatch(movie) {
         const { data: already } = await supabaseClient.from('watchlist').select('id').eq('movie_id', movieDB.id).maybeSingle();
         if (!already) await supabaseClient.from('watchlist').insert({ movie_id: movieDB.id, added_by: currentUser.id });
         if (window.confetti) confetti({ particleCount: 140, spread: 90, origin: { y: 0.6 } });
-        showToast(`🎉 Deu match! "${movie.title || movie.title}" entrou na lista de vocês`);
+        showToast(`Deu match! "${movie.title || movie.title}" entrou na lista de vocês`, "sparkle");
         loadData();
     } catch (e) { }
 }
@@ -1295,7 +1322,7 @@ function subscribeRealtimeUpdates() {
     supabaseClient.channel(`watchlist-activity-${roomId}`)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'watchlist' }, (payload) => {
             if (payload.new.added_by && payload.new.added_by !== currentUser.id) {
-                showToast(`${partnerName()} adicionou um filme à lista! 🎬`);
+                showToast(`${partnerName()} adicionou um filme à lista!`, "clapper");
                 loadData();
             }
         })
@@ -1305,7 +1332,7 @@ function subscribeRealtimeUpdates() {
     supabaseClient.channel(`watched-activity-${roomId}`)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'watched' }, (payload) => {
             if (payload.new.user_id && payload.new.user_id !== currentUser.id) {
-                showToast(`${partnerName()} acabou de assistir um filme! 🍿`);
+                showToast(`${partnerName()} acabou de assistir um filme!`, "popcorn");
                 loadData();
             }
         })
@@ -1375,7 +1402,7 @@ function openWrappedModal() {
             if (a > 0 && b > 0) {
                 if (a + b > bestScore) { bestScore = a + b; best = s.movies; }
                 const diff = Math.abs(a - b);
-                if (diff > worstDiff) { worstDiff = diff; worst = s.movies; worstNotes = `Você: ⭐${a} • ${partnerName()}: ⭐${b}`; }
+                if (diff > worstDiff) { worstDiff = diff; worst = s.movies; worstNotes = `Você: ${iconInline('star')}${a} • ${partnerName()}: ${iconInline('star')}${b}`; }
             }
         });
 
@@ -1383,7 +1410,7 @@ function openWrappedModal() {
             document.getElementById('wr-top-card').classList.remove('hidden');
             document.getElementById('wr-top-poster').src = best.poster_url;
             document.getElementById('wr-top-title').innerText = best.title;
-            document.getElementById('wr-top-notas').innerText = `Soma: ⭐ ${bestScore.toFixed(1)} / 20`;
+            document.getElementById('wr-top-notas').innerHTML = `Soma: ${iconInline('star')} ${bestScore.toFixed(1)} / 20`;
         } else {
             document.getElementById('wr-top-card').classList.add('hidden');
         }
