@@ -74,6 +74,7 @@ Chart.defaults.scale.ticks.display = false;
 
 async function init() {
     hydrateIcons();
+    playCurtainIntro();
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) return window.location.href = 'index.html';
     currentUser = session.user;
@@ -91,6 +92,8 @@ async function init() {
     fetchSurpriseSuggestion();
     setupTinderMode();
     subscribeRealtimeUpdates();
+    setupTretaArchive();
+    updateDemandBadge();
 }
 
 async function loadData() {
@@ -122,6 +125,7 @@ async function loadData() {
     }
 
     updateGlobalUI();
+    updateNudgeBanner();
     renderWatchlist();
     if (document.getElementById('network-section').classList.contains('active')) renderProfile(document.getElementById('tab-me').classList.contains('active') ? currentUser.id : partner?.id);
 }
@@ -1064,7 +1068,13 @@ async function renderProfile(uid) {
             }
 
             const div = document.createElement('div'); div.className = 'shared-item'; div.onclick = () => openMovieDetails(m.tmdb_id);
-            div.innerHTML = `<img src="${m.poster_url}" class="shared-poster"><div style="flex:1;"><h4 style="font-family: var(--font-title);">${m.title}</h4><div class="shared-notes"><div><small>Você</small><b>${myDisplay}</b></div><div><small>${paName}</small><b>${paDisplay}</b></div></div></div>`;
+            let tugBarHtml = '';
+            if (myNote > 0 && paNote > 0) {
+                const total = parseFloat(myNote) + parseFloat(paNote);
+                const myPct = (parseFloat(myNote) / total) * 100;
+                tugBarHtml = `<div class="tug-bar"><div class="tug-fill-me" style="width:${myPct}%"></div><div class="tug-fill-pa" style="width:${100 - myPct}%"></div><div class="tug-marker"></div></div>`;
+            }
+            div.innerHTML = `<img src="${m.poster_url}" class="shared-poster"><div style="flex:1;"><h4 style="font-family: var(--font-title);">${m.title}</h4><div class="shared-notes"><div><small>Você</small><b>${myDisplay}</b></div><div><small>${paName}</small><b>${paDisplay}</b></div></div>${tugBarHtml}</div>`;
             listShared.appendChild(div);
 
             if (myNote > 0 && paNote > 0) {
@@ -1089,6 +1099,8 @@ async function renderProfile(uid) {
 
     if (sharedCount === 0) document.getElementById('shared-empty').classList.remove('hidden');
     else document.getElementById('shared-empty').classList.add('hidden');
+
+    renderRatingsEvolutionChart();
 
     VanillaTilt.init(document.querySelectorAll(".movie-card"), { max: 15, speed: 400 });
 }
@@ -1415,6 +1427,152 @@ function openWrappedModal() {
     }
 
     openModal('modal-wrapped');
+}
+
+// ============================================================
+// EVOLUÇÃO DAS NOTAS (gráfico de linha) + ARQUIVO DE TRETAS + SELO DE EXIGÊNCIA
+// ============================================================
+let evolutionChartInstance = null;
+
+function renderRatingsEvolutionChart() {
+    const canvas = document.getElementById('ratingsLineChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    const myPoints = myHistory.filter(h => h.rating > 0).map(h => ({ x: h.watched_at, y: parseFloat(h.rating) })).sort((a, b) => new Date(a.x) - new Date(b.x));
+    const paPoints = partnerHistory.filter(h => h.rating > 0).map(h => ({ x: h.watched_at, y: parseFloat(h.rating) })).sort((a, b) => new Date(a.x) - new Date(b.x));
+
+    if (evolutionChartInstance) evolutionChartInstance.destroy();
+    evolutionChartInstance = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+            datasets: [
+                { label: 'Você', data: myPoints, borderColor: '#d4af6a', backgroundColor: 'rgba(212,175,106,0.12)', tension: 0.35, pointRadius: 2, borderWidth: 2, fill: true },
+                { label: partnerName(), data: paPoints, borderColor: 'rgba(255,255,255,0.55)', backgroundColor: 'rgba(255,255,255,0.05)', tension: 0.35, pointRadius: 2, borderWidth: 2, fill: true },
+            ]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                x: { type: 'time', time: { unit: 'month' }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: { min: 0, max: 10, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+            },
+            plugins: { legend: { labels: { color: 'rgba(255,255,255,0.7)', font: { size: 11 } } } }
+        }
+    });
+}
+
+function setupTretaArchive() {
+    const btn = document.getElementById('btn-open-treta-archive');
+    if (btn) btn.onclick = () => { haptic(); openTretaArchive(); };
+}
+
+function openTretaArchive() {
+    const myIds = myHistory.map(x => x.movie_id);
+    const shared = partner ? partnerHistory.filter(x => myIds.includes(x.movie_id)) : [];
+
+    const tretas = [];
+    shared.forEach(s => {
+        const mine = myHistory.find(x => x.movie_id === s.movie_id);
+        if (!mine) return;
+        const a = parseFloat(mine.rating), b = parseFloat(s.rating);
+        if (a > 0 && b > 0 && Math.abs(a - b) > 0) {
+            tretas.push({ movie: s.movies, diff: Math.abs(a - b), a, b });
+        }
+    });
+    tretas.sort((x, y) => y.diff - x.diff);
+    const top = tretas.slice(0, 10);
+
+    const list = document.getElementById('treta-archive-list');
+    const empty = document.getElementById('treta-archive-empty');
+    list.innerHTML = '';
+
+    if (top.length === 0) {
+        list.classList.add('hidden'); empty.classList.remove('hidden');
+    } else {
+        list.classList.remove('hidden'); empty.classList.add('hidden');
+        top.forEach((t, i) => {
+            const item = document.createElement('div');
+            item.className = 'treta-archive-item';
+            item.onclick = () => openMovieDetails(t.movie.tmdb_id);
+            item.innerHTML = `<div class="treta-archive-rank">${i + 1}</div><img src="${t.movie.poster_url}"><div><h4>${t.movie.title}</h4><span class="treta-diff">Diferença de ${t.diff.toFixed(1)} pontos</span><div style="font-size:12px; color:var(--text-sec); margin-top:2px;">Você: ${t.a} • ${partnerName()}: ${t.b}</div></div>`;
+            list.appendChild(item);
+        });
+    }
+
+    openModal('modal-treta-archive');
+}
+
+// Compara a média de vocês com a nota média do TMDB pros mesmos filmes
+async function updateDemandBadge() {
+    const badge = document.getElementById('demand-badge');
+    const text = document.getElementById('demand-text');
+    if (!badge) return;
+
+    const rated = [...myHistory, ...partnerHistory].filter(h => h.rating > 0 && h.movies?.tmdb_id);
+    const uniqueMovies = [...new Map(rated.map(h => [h.movies.tmdb_id, h.movies])).values()];
+    if (uniqueMovies.length < 3) { badge.classList.add('hidden'); return; }
+
+    try {
+        const sample = uniqueMovies.slice(0, 40); // limite razoável de chamadas
+        const results = await Promise.all(sample.map(async m => {
+            try {
+                const res = await tmdbFetch(`movie/${m.tmdb_id}`, { language: 'pt-BR' });
+                const data = await res.json();
+                return data.vote_average || null;
+            } catch (e) { return null; }
+        }));
+        const tmdbAvgs = results.filter(v => v && v > 0);
+        if (tmdbAvgs.length < 3) { badge.classList.add('hidden'); return; }
+
+        const tmdbAvg = tmdbAvgs.reduce((a, b) => a + b, 0) / tmdbAvgs.length;
+        const ourRatings = rated.filter(h => sample.some(m => m.tmdb_id === h.movies.tmdb_id)).map(h => parseFloat(h.rating));
+        const ourAvg = ourRatings.reduce((a, b) => a + b, 0) / ourRatings.length;
+
+        const diffPct = ((ourAvg - tmdbAvg) / tmdbAvg) * 100;
+        badge.classList.remove('hidden');
+        if (Math.abs(diffPct) < 3) {
+            text.innerText = `Vocês dão notas bem próximas da média do TMDB para os filmes que assistem.`;
+        } else if (diffPct < 0) {
+            text.innerText = `Vocês são cerca de ${Math.abs(diffPct).toFixed(0)}% mais exigentes que a média do TMDB.`;
+        } else {
+            text.innerText = `Vocês são cerca de ${diffPct.toFixed(0)}% mais generosos que a média do TMDB.`;
+        }
+    } catch (e) { badge.classList.add('hidden'); }
+}
+
+// ============================================================
+// AVISO DE SESSÃO PARADA
+// ============================================================
+function updateNudgeBanner() {
+    const banner = document.getElementById('nudge-banner');
+    if (!banner) return;
+    const allHist = [...myHistory, ...partnerHistory];
+    const hasTicket = !!currentTicketMovie;
+    if (hasTicket || allHist.length === 0) { banner.classList.add('hidden'); return; }
+
+    const lastDate = allHist.reduce((max, h) => { const d = new Date(h.watched_at); return d > max ? d : max; }, new Date(0));
+    const days = Math.floor((Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (days >= 7) {
+        banner.classList.remove('hidden');
+        document.getElementById('nudge-text').innerText = days >= 14
+            ? `Já fazem ${days} dias sem sessão... bora escolher um filme? 🍿`
+            : `Já faz uma semana... bora escolher um filme?`;
+    } else {
+        banner.classList.add('hidden');
+    }
+}
+
+// ============================================================
+// CORTINA DE CINEMA (transição de entrada)
+// ============================================================
+function playCurtainIntro() {
+    const el = document.getElementById('curtain-overlay');
+    if (!el) return;
+    requestAnimationFrame(() => {
+        el.classList.add('opening');
+        setTimeout(() => el.classList.add('done'), 1100);
+    });
 }
 
 init();

@@ -15,10 +15,17 @@
     <link rel="stylesheet" href="src/css/dashboard.css">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
+    <div id="curtain-overlay" class="curtain-overlay">
+        <div class="curtain-panel curtain-left"></div>
+        <div class="curtain-panel curtain-right"></div>
+    </div>
+
     <div id="dynamic-bg" class="dashboard-bg"></div>
     <div class="vignette-overlay"></div>
     <div class="grain-overlay"></div>
@@ -116,6 +123,11 @@
                     </div>
                 </div>
 
+                <div id="nudge-banner" class="nudge-banner glass-panel hidden">
+                    <span class="icon" data-icon="moon"></span>
+                    <p id="nudge-text">Já faz um tempo... bora escolher um filme?</p>
+                </div>
+
                 <div class="label-section mt-15">QUE TAL ESTE? (SURPRESA)</div>
                 <div id="suggestion-box" class="suggestion-card glass-panel" onclick="openMovieDetails(window.surpriseMovieId)">
                     <img id="sug-poster" src="assets/img/sem-capa.png" class="sug-img">
@@ -203,7 +215,26 @@
                         <div class="sync-bar"><div id="sync-fill" class="sync-fill"></div></div>
                         <p id="sync-text">Calculando...</p>
                     </div>
-                    
+
+                    <div id="demand-badge" class="demand-badge glass-panel hidden">
+                        <span class="icon" data-icon="chartBar"></span>
+                        <p id="demand-text">Calculando exigência...</p>
+                    </div>
+
+                    <div class="evolution-card glass-panel">
+                        <h3>Evolução das Notas</h3>
+                        <div class="evolution-chart-wrap"><canvas id="ratingsLineChart"></canvas></div>
+                    </div>
+
+                    <button id="btn-open-treta-archive" class="tinder-cta glass-panel">
+                        <span class="tinder-cta-icon" data-icon="bolt"></span>
+                        <div class="tinder-cta-text">
+                            <b>Arquivo de Tretas</b>
+                            <small>As maiores discordâncias da história</small>
+                        </div>
+                        <span class="tinder-cta-arrow">›</span>
+                    </button>
+
                     <div class="shared-list" id="shared-movies-list"></div>
                     
                     <div id="shared-empty" class="empty-state hidden mt-15">
@@ -396,6 +427,21 @@
                 </div>
             </div>
             <p id="wrapped-empty" class="sub-text hidden" style="text-align:center; margin-top: 10px;">Vocês ainda não assistiram nada juntos esse mês. Bora resolver isso? <span class="icon" data-icon="popcorn"></span></p>
+        </div>
+        <button onclick="closeModals()" class="btn-text cancel full-width mt-10">Fechar</button>
+    </div>
+</div>
+
+<div id="modal-treta-archive" class="overlay hidden">
+    <div class="bottom-sheet glass-panel swipeable-sheet wrapped-sheet">
+        <div class="sheet-pill drag-handle"></div>
+        <h3>Arquivo de Tretas</h3>
+        <p class="sub-text">As maiores discordâncias de nota da história de vocês.</p>
+        <div id="treta-archive-list" class="treta-archive-list mt-15"></div>
+        <div id="treta-archive-empty" class="empty-state hidden mt-15">
+            <span class="empty-emoji" data-icon="checkCircle"></span>
+            <h3>Paz total</h3>
+            <p>Vocês concordam demais! Nenhuma treta registrada ainda.</p>
         </div>
         <button onclick="closeModals()" class="btn-text cancel full-width mt-10">Fechar</button>
     </div>
